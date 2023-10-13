@@ -1,10 +1,18 @@
+let gameRules = new bootstrap.Modal(document.getElementById('gameRulesModal'));
+
+let button = document.getElementById("gameRulesButton");
+
+button.onclick= function(){
+    gameRules.show();
+}
+
+
+
+
 // Modalen Dialog öffnen um Namen einzugeben
 let myModal = new bootstrap.Modal(document.getElementById('playerNames'));
 myModal.show();
 
-
-// nach jeder tasteneingabe im formular überprüfen ob
-// 4 eindeutige spielerInnennamen vorhanden sind
 document.getElementById('playerNamesForm').addEventListener('keyup', function (evt) {
     console.log(evt);
 
