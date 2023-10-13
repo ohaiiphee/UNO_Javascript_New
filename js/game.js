@@ -1,7 +1,6 @@
-"use strict";
 let result = Object();
 
-async function load() {
+async function startNewGame() {
   // hier starten wir gleich den request
   // warten auf das promise (alternativ fetch, then notation)
   let response = await fetch(
@@ -27,7 +26,6 @@ async function load() {
   }
 }
 // hier rufen wir unsere asynchrone funktion auf
-load();
 
 // Modalen Dialog öffnen um Namen einzugeben
 let myModal = new bootstrap.Modal(document.getElementById("playerNames"));
@@ -83,28 +81,38 @@ document
       li.textContent = einPlayer;
     }
 
-    spielerListe.removeChild();
+    //spielerListe.removeChild();
 
+    let playerliste_html_ul = document.getElementById("spielerListe");
 
-  
+    playerArray.forEach((ein_player_name) => {
+      const li = document.createElement("li");
+      console.log("li: ", li);
+      const span = document.createElement("span");
+      console.log("span: ", span);
 
-let playerliste_html_ul = document.getElementById("spielerListe");
+      li.appendChild(span);
+      playerliste_html_ul.appendChild(li);
 
-playerArray.forEach((ein_player_name) => {
-  const li = document.createElement("li");
-  console.log("li: ", li);
-  const span = document.createElement("span");
-  console.log("span: ", span);
+      span.textContent = ein_player_name;
 
-  li.appendChild(span);
-  playerliste_html_ul.appendChild(li);
+      //neues Spiel starten
+      startNewGame();
 
-  span.textContent = ein_player_name;
-
-  let cardsArray = [
-    
-  ]
-
-});
-    
-});
+      playerliste_html_ul = document.getElementById("spielerListe");
+      console.log("Alle Karten:------------");
+      let i = 0;
+      while (i < result.Players[0].Cards.length) {
+        console.log(result.Players[0].Cards[i]);
+        i++;
+        //Karten zur Liste hinzufügen
+        const li = document.createElement("li");
+        console.log("li: ",li);
+        const span = document.createElement("span");
+        console.log("span: ", span);
+        li.appendChild(span);
+        playerliste_html_ul.appendChild(li);
+        span.textContent=result.Players[0].Cards[i].Color+" "+result.Players[0].Cards[i].Text;
+      }
+    });
+  });
