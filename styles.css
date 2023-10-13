@@ -1,0 +1,28 @@
+
+#player1{
+    position: absolute;
+    top: 60px; /* adjust as needed */
+    left: 50%; /* adjust as needed */
+    transform: translateX(-50%);
+}
+
+#player2{
+    position: absolute;
+    top: 50%; /* adjust as needed */
+    right: 10px; /* adjust as needed */
+    transform: translateY(-50%);
+}
+
+#player3{
+    position: absolute;
+    bottom: 10px; /* adjust as needed */
+    left: 50%; /* adjust as needed */
+    transform: translateX(-50%);
+}
+
+#player4{
+    position: absolute;
+    top: 50%; /* adjust as needed */
+    left: 10px; /* adjust as needed */
+    transform: translateY(-50%);
+}
