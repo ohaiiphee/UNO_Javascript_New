@@ -1,71 +1,69 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-  <!-- Required meta tags -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uno Game</title>
+    <!-- TODO: get an icon-->
 
-<!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="style.css">
-  <title>Modaler Dialog</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="styles.css" rel="stylesheet">
 </head>
+
 <body>
-  <nav class="navbar navbar-dark bg-dark">
-    <span class="navbar-brand h1">UNO ZAM 2023</span>
-    <span class="navbar-text">Das ist der Navbar Text</span>
-  </nav>
+    <nav class="navbar navbar-dark bg-dark">
+        <span class="navbar-brand h1">UNO ZAM 2023</span>
+        <span class="navbar-text">Das ist der Navbar Text</span>
+    </nav>
 
-  <h1>Modaler Dialog</h1>
+    <div id="myClass"></div>
 
-  <div class="modal fade" id="playerNames" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
-    <form id="playerNamesForm">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Namen der Spieler*innen</h5>
-          </div>
-          <div class="modal-body">
-            <div class="m-3 row">
-              <input type="text" class="form-control" id="playerName1"
-                placeholder="Name für Spieler*in 1 eingeben"></input>
+    <!--
+    <h2> Karten von Spieler 1 </h2>
+    <ul id="cards_Player1"></ul>
+
+    <h2> Karten von Spieler 2 </h2>
+    <ul id="cards_Player2"></ul>
+
+    <h2> Karten von Spieler 3 </h2>
+    <ul id="cards_Player3"></ul>
+
+    <h2> Karten von Spieler 4 </h2>
+    <ul id="cards_Player4"></ul>
+    -->
+
+    <div class="modal fade" id="playerNames" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
+        <form id="playerNamesForm">
+            <!-- TODO: Modaler Dialog DIV hier -->
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Namen der SpielerInnen</h5>
+                        <!--<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button> -->
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" class="form-control" id="playerName1" value="SpielerIn1">
+                        <br/>
+                        <input type="text" class="form-control" id="playerName2" value="SpielerIn2">
+                        <br/>
+                        <input type="text" class="form-control" id="playerName3" value="SpielerIn3">
+                        <br/>
+                        <input type="text" class="form-control" id="playerName4" value="SpielerIn4">
+                    </div>
+                    <div class="modal-footer">
+                        <!--<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button> -->
+                        <button type="submit" class="btn btn-primary">Spiel starten</button>
+                    </div>
+                </div>
             </div>
-
-            <div class="m-3 row">
-              <input type="text" class="form-control" id="playerName2"
-                placeholder="Name für Spieler*in 2 eingeben"></input>
-            </div>
-
-            <div class="m-3 row">
-              <input type="text" class="form-control" id="playerName3"
-                placeholder="Name für Spieler*in 3 eingeben"></input>
-            </div>
-
-            <div class="m-3 row">
-              <input type="text" class="form-control" id="playerName4"
-                placeholder="Name für Spieler*in 4 eingeben"></input>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-primary" id="playerNamesSubmit">Spiel starten</button>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>  
-    <ul id ="spielerListe">
-      
-     
-
-    </ul>
-  </section>
-
-
-  <!-- Option 1: Bootstrap Bundle -->
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-
-  <!-- Custom js here -->
-  <script src="js/game.js"></script>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+    <script src="main.js"></script>
 </body>
+
 </html>
