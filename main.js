@@ -15,21 +15,36 @@ document.getElementById('playerNamesForm').addEventListener('submit', function (
     console.log("submit");
     // Formular absenden verhindern
     evt.preventDefault();
-    myModal.hide();
+
 
     const playerNames = [];
-    for (let i = 1; i <= 4; i++) {
-        const playerName = document.getElementById(`playerName${i}`).value;
-        playerNames.push(playerName);
-        myModal.show();
-
-
-        const playerDiv = document.createElement("div");
-        playerDiv.textContent = playerName;
-        playerDiv.id = `player${i}`;
-        document.getElementById("myClass").appendChild(playerDiv);
-    }
+    let error = 0;
     
+        for (let i = 1; i <= 4; i++) {
+            const playerName = document.getElementById(`playerName${i}`).value;
+
+            if(!playerName[i]){
+                alert("Player name can not be empty, please enter a valid name!");
+                return;
+            }
+
+            if(playerNames.includes(playerName)){
+                alert("Every name must be different, please enter new names!");
+                return;
+            }
+
+            playerNames.push(playerName);
+
+            const playerDiv = document.createElement("div");
+            playerDiv.textContent = playerName;
+            playerDiv.id = `player${i}`;
+            document.getElementById("myClass").appendChild(playerDiv);
+        }
+    
+    if (error == 0) {
+        myModal.hide();
+    }
+
 
     //----------------------------------------------------------------------------------------------------------------------------------
 
