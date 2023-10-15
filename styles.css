@@ -1,3 +1,29 @@
+ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+}
+
+li {
+    margin-right: -50px;
+}
+
+.image-container {
+    max-width: 100%;
+}
+
+.image-container img {
+    width: 50%;
+    height: auto;
+}
+
+#player_ul1 li,
+#player_ul2 li,
+#player_ul3 li,
+#player_ul4 li {
+    width: 50%; /* Set the desired width */
+    height: auto; /* Set the desired height */
+}
 
 #player1{
     position: absolute;
@@ -8,9 +34,14 @@
 
 #player2{
     position: absolute;
-    top: 50%; /* adjust as needed */
-    right: 10px; /* adjust as needed */
+    top: 50%;
+    right: 10px; /* Adjust as needed */
     transform: translateY(-50%);
+}
+
+#player_ul2 {
+    display: flex;
+    flex-direction: column;
 }
 
 #player3{
@@ -20,11 +51,24 @@
     transform: translateX(-50%);
 }
 
-#player4{
+#player4 {
     position: absolute;
-    top: 50%; /* adjust as needed */
-    left: 10px; /* adjust as needed */
+    top: 50%;
+    left: 10px; /* Adjust as needed */
     transform: translateY(-50%);
+}
+
+#player_ul4 {
+    display: flex;
+    flex-direction: column;
+}
+
+#player_ul2 li {
+    transform: rotate(90deg); /* Rotate each card 90 degrees clockwise */
+}
+
+#player_ul4 li {
+    transform: rotate(-90deg); /* Rotate each card 90 degrees counterclockwise */
 }
 
 .modal-content1{

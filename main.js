@@ -1,4 +1,5 @@
 let result = Object();
+const baseUrl = "uno_karten_originaldesign/";
 
 // Modal Dialog for Game Rules
 let gameRules = new bootstrap.Modal(document.getElementById('gameRulesModal'));
@@ -35,24 +36,6 @@ document.getElementById('playerNamesForm').addEventListener('submit', async func
 function playerCreation() {
     let error = 0;
 
-    console.log(
-        "Name P1:" + document.getElementById("playerName1").value);
-    console.log(
-        "Name P2:" + document.getElementById("playerName2").value);
-    console.log(
-        "Name P3:" + document.getElementById("playerName3").value);
-    console.log(
-        "Name P4:" + document.getElementById("playerName4").value);
-
-    let playerArray = [
-        document.getElementById("playerName1").value,
-        document.getElementById("playerName2").value,
-        document.getElementById("playerName3").value,
-        document.getElementById("playerName4").value,
-    ];
-
-    console.log("Spieler: ", playerArray);
-
     for (let i = 1; i <= 4; i++) {
         const playerName = document.getElementById(`playerName${i}`).value;
 
@@ -77,6 +60,7 @@ function playerCreation() {
         const playerDiv = document.createElement("div");
         playerDiv.textContent = playerName;
         playerDiv.id = `player${i}`;
+        playerDiv.className = "image-container"
         document.getElementById("myPlayersClass").appendChild(playerDiv);
 
         //create uls for every player and append them to the divs
@@ -119,24 +103,35 @@ async function startNewGame() {
 function distributeCards(playerId, htmlid) {
     let playerlist = document.getElementById(htmlid);
     let i = 0;
+    
     while (i < result.Players[playerId].Cards.length) {
+        let img = document.createElement("img");
+        let cardColor = result.Players[0].Cards[i].Color;
+        let cardNumber = result.Players[0].Cards[i].Value;
+        let card = cardColor+cardNumber;
+        let cardUrl = `${baseUrl}${card}.png`;
+        img.src= cardUrl;
         console.log(result.Players[0].Cards[i]);
 
         //Karten zur Liste hinzufügen
         const li = document.createElement("li");
         console.log("li: ", li);
 
-        const span = document.createElement("span");
-        console.log("span: ", span);
+        li.appendChild(img);
 
-        li.appendChild(span);
+        //const span = document.createElement("span");
+        //console.log("span: ", span);
+
+        //li.appendChild(span);
 
         playerlist.appendChild(li);
 
-        span.textContent =
-            result.Players[playerId].Cards[i].Color +
-            " " +
-            result.Players[playerId].Cards[i].Text;
-        i++;
+        //span.textContent =
+        // result.Players[playerId].Cards[i].Color +
+       // " " +
+            //result.Players[playerId].Cards[i].Text;
+            i++;
     }
 }
+
+
