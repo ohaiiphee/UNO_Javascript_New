@@ -1,6 +1,7 @@
 let result = Object();
 const baseUrl = "uno_karten_originaldesign/";
 let spielId = Object();
+let playerPoints = [];
 
 //Button to start a new Game
 let newGameButton = document.getElementById("newGameButton");
@@ -72,6 +73,8 @@ function playerCreation() {
         const playerUl = document.createElement("ul");
         playerUl.id = `player_ul${i}`;
         document.getElementById(`player${i}`).appendChild(playerUl);
+
+
     }
 
     if (error == 0) {
@@ -79,6 +82,7 @@ function playerCreation() {
         myModal.hide();
     }
 }
+
 
 async function startNewGame() {
     // hier starten wir gleich den request
@@ -98,9 +102,17 @@ async function startNewGame() {
         // wir lesen den response body
         result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
         spielId = result.Id; // Get SpielId from the API response
+        playerPoints = result.Players.map(player => player.Score);
         console.log("New game started with GameID: " + spielId);
         alert("SpielId", spielId);
         console.log(result);
+        for(let i = 0; i <= 3; i++){
+            const pointsSpan = document.createElement("span");
+            pointsSpan.id = `playerPoints${i+1}`;
+            pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
+            document.getElementById(`player${i+1}`).appendChild(pointsSpan);
+        }
+        console.log(playerPoints);
         alert(JSON.stringify(result));
 
     //distribute cards inside the startGame() so that the players get new cards every time we start a new game
@@ -180,6 +192,8 @@ async function topCard(spielId) {
     }
 
 }
+
+
 
 /*async function initializeGame() {
     try {
