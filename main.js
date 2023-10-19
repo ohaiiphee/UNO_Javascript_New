@@ -209,7 +209,9 @@ async function topCard(spielId) {
 
 async function drawCard(spielId){
 
-    
+    let drawCardButton = document.getElementById("drawButton");
+    drawCardButton.innerHTML =
+    <img src="uno_karten_originaldesign\back0.png"></img>
 
     const drawCardDiv = document.createElement("Div");
     drawCardDiv.className = "drawcard-container";
