@@ -1,5 +1,6 @@
 let result = Object();
 const baseUrl = "uno_karten_originaldesign/";
+let spielId;
 
 // Modal Dialog for Game Rules
 let gameRules = new bootstrap.Modal(document.getElementById('gameRulesModal'));
@@ -30,6 +31,8 @@ document.getElementById('playerNamesForm').addEventListener('submit', async func
     distributeCards(1, "player_ul2");
     distributeCards(2, "player_ul3");
     distributeCards(3, "player_ul4");
+     
+  // await initializeGame();
 
 })
 
@@ -92,8 +95,12 @@ async function startNewGame() {
         // wenn http-status zwischen 200 und 299 liegt
         // wir lesen den response body
         result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
+        const spielId = result.playerId; // Get SpielId from the API response
+            console.log(spielId);
+            alert( "SpielId",spielId);
+            return spielId; 
         console.log(result);
-        alert(JSON.stringify(result));
+       alert(JSON.stringify(result));
     } else {
         alert("HTTP-Error: " + response.status);
     }
@@ -135,3 +142,40 @@ function distributeCards(playerId, htmlid) {
 }
 
 
+async function topCard(spielId){
+
+  // warten auf das promise (alternativ fetch, then notation)
+
+  //const SpielId = 
+
+  const response = await fetch(`https://nowaunoweb.azurewebsites.net/api/game/topCard/${spielId}`, {
+      method: 'GET',
+      //body: JSON.stringify(playerNames),
+      headers: {
+          'Content-type': 'application/json; charset=UTF-8',
+      }
+  });
+
+  // dieser code wird erst ausgeführt wenn fetch fertig ist
+  if (response.ok) {
+      // wenn http-status zwischen 200 und 299 liegt
+      // wir lesen den response body
+      result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
+      console.log(result);
+      alert(JSON.stringify(result));
+  } else {
+      alert("HTTP-Error: " + response.status);
+  }
+
+}
+
+/*async function initializeGame() {
+    try {
+        const spielId = await startNewGame(); // Get SpielId from startNewGame() function
+        await topCard(spielId); // Pass the SpielId to topCard() function
+    } catch (error) {
+        // Handle errors that might occur during game initialization.
+        console.error(error);
+        // Optionally, show an alert or perform other error handling actions.
+    }
+}*/
