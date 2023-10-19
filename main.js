@@ -1,13 +1,18 @@
 let result = Object();
+let result2 = Object();
+let result3 = Object();
 const baseUrl = "uno_karten_originaldesign/";
 let spielId = Object();
 let playerPoints = [];
+let playCardResponse = Object();
 
 //Button to start a new Game
 let newGameButton = document.getElementById("newGameButton");
-newGameButton.addEventListener("click", async function(){
+newGameButton.addEventListener("click", async function () {
     await startNewGame();
 })
+
+
 // Modal Dialog for Game Rules
 let gameRules = new bootstrap.Modal(document.getElementById('gameRulesModal'));
 let gameRulesButton = document.getElementById("gameRulesButton");
@@ -32,12 +37,14 @@ document.getElementById('playerNamesForm').addEventListener('submit', async func
 
     //start the game
     await startNewGame();
+    await topCard(spielId);
+
 
 
 
     // await initializeGame();
 
-})
+});
 
 function playerCreation() {
     let error = 0;
@@ -104,18 +111,18 @@ async function startNewGame() {
         spielId = result.Id; // Get SpielId from the API response
         playerPoints = result.Players.map(player => player.Score);
         console.log("New game started with GameID: " + spielId);
-        alert("SpielId", spielId);
+        //alert("SpielId", spielId);
         console.log(result);
-        for(let i = 0; i <= 3; i++){
+        for (let i = 0; i <= 3; i++) {
             const pointsSpan = document.createElement("span");
-            pointsSpan.id = `playerPoints${i+1}`;
+            pointsSpan.id = `playerPoints${i + 1}`;
             pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
-            document.getElementById(`player${i+1}`).appendChild(pointsSpan);
+            document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
         }
         console.log(playerPoints);
-        alert(JSON.stringify(result));
+        //alert(JSON.stringify(result));
 
-    //distribute cards inside the startGame() so that the players get new cards every time we start a new game
+        //distribute cards inside the startGame() so that the players get new cards every time we start a new game
         distributeCards(0, "player_ul1");
         distributeCards(1, "player_ul2");
         distributeCards(2, "player_ul3");
@@ -131,9 +138,10 @@ function distributeCards(playerId, htmlid) {
     let playerlist = document.getElementById(htmlid);
     let i = 0;
 
-while(playerlist.firstChild){
-    playerlist.removeChild(playerlist.firstChild);
-}
+    while (playerlist.firstChild) {
+        playerlist.removeChild(playerlist.firstChild);
+    }
+
     while (i < result.Players[playerId].Cards.length) {
         let img = document.createElement("img");
         img.className = "card";
@@ -142,6 +150,9 @@ while(playerlist.firstChild){
         let card = cardColor + cardNumber;
         let cardUrl = `${baseUrl}${card}.png`;
         img.src = cardUrl;
+        img.addEventListener("click", clickCard, false);
+        img.cardColor = cardColor;
+        img.cardValue = cardNumber;
         console.log(result.Players[0].Cards[i]);
 
         //Karten zur Liste hinzufügen
@@ -168,40 +179,85 @@ while(playerlist.firstChild){
 
 async function topCard(spielId) {
 
-    // warten auf das promise (alternativ fetch, then notation)
+    //if topcard img already exists, delete it to replace with new one --TEST IF NEEDED
 
-    //const SpielId = 
+    const topCardDiv = document.createElement("Div");
 
-    const response = await fetch(`https://nowaunoweb.azurewebsites.net/api/game/topCard/${spielId}`, {
-        method: 'GET',
-        //body: JSON.stringify(playerNames),
-        headers: {
-            'Content-type': 'application/json; charset=UTF-8',
+    while (topCardDiv.firstChild) {
+        topCardDiv.removeChild(topCardDiv.firstChild);
+    }
+
+    topCardDiv.className = "topcard-container";
+
+    let img = document.createElement("img");
+    let cardColor = result.TopCard.Color;
+    let cardNumber = result.TopCard.Value;
+    //let cardNumber = result2.TopCard[spielId].Value;
+    let card = cardColor + cardNumber;
+    let cardUrl = `${baseUrl}${card}.png`;
+    img.src = cardUrl;
+
+    const li = document.createElement("li");
+    console.log("li: ", li);
+    li.appendChild(img);
+
+    topCardDiv.appendChild(li);
+    document.getElementById("myPlayersClass").appendChild(topCardDiv);
+
+
+    const response = await fetch(
+        `https://nowaunoweb.azurewebsites.net/api/game/topCard/${spielId}`,
+        {
+            method: "GET",
+            //body: JSON.stringify(playerNames),
+            headers: {
+                "Content-type": "application/json; charset=UTF-8",
+            },
         }
-    });
-
+    );
     // dieser code wird erst ausgeführt wenn fetch fertig ist
     if (response.ok) {
         // wenn http-status zwischen 200 und 299 liegt
         // wir lesen den response body
-        result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-        console.log(result);
-        alert(JSON.stringify(result));
+        result2 = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
+        console.log("The Topcard is: "), console.log(result2);
+        //alert(JSON.stringify(result2));
     } else {
         alert("HTTP-Error: " + response.status);
     }
+    result2.topCard;
+}
 
+//
+async function clickCard(ev) {
+    console.log(ev);
+    tryToPlayCard(ev.target.cardValue, ev.target.cardColor);
 }
 
 
+async function tryToPlayCard(value, color) {
 
-/*async function initializeGame() {
-    try {
-        const spielId = await startNewGame(); // Get SpielId from startNewGame() function
-        await topCard(spielId); // Pass the SpielId to topCard() function
-    } catch (error) {
-        // Handle errors that might occur during game initialization.
-        console.error(error);
-        // Optionally, show an alert or perform other error handling actions.
+    let wildColor = "not_being_used_right_now";
+    let gameID = result.Id;
+    let URL = "https://nowaunoweb.azurewebsites.net/api/Game/PlayCard/" + gameID + "?value=" + value + "&color" + color + "&wildColor=" + wildColor;
+
+    playCardResponse = await fetch(URL,
+        {
+            method: "PUT",
+            //body: JSON.stringify(playerNames),
+            headers: {
+                "Content-type": "application/json; charset=UTF-8",
+            },
+        }
+    );
+    // dieser code wird erst ausgeführt wenn fetch fertig ist
+    if (response.ok) {
+        playCardResponse = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
+        console.log("congratz card was played");
+        
+    } else {
+        console.log("nope can't play that one");
+        alert("HTTP-Error: " + response.status);
     }
-}*/
+}
+
