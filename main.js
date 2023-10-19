@@ -1,11 +1,16 @@
 let result = Object();
 const baseUrl = "uno_karten_originaldesign/";
-let spielId;
+let spielId = Object();
 
+//Button to start a new Game
+let newGameButton = document.getElementById("newGameButton");
+newGameButton.addEventListener("click", async function(){
+    await startNewGame();
+})
 // Modal Dialog for Game Rules
 let gameRules = new bootstrap.Modal(document.getElementById('gameRulesModal'));
-let button = document.getElementById("gameRulesButton");
-button.onclick = function () {
+let gameRulesButton = document.getElementById("gameRulesButton");
+gameRulesButton.onclick = function () {
     gameRules.show();
 }
 
@@ -27,12 +32,9 @@ document.getElementById('playerNamesForm').addEventListener('submit', async func
     //start the game
     await startNewGame();
 
-    distributeCards(0, "player_ul1");
-    distributeCards(1, "player_ul2");
-    distributeCards(2, "player_ul3");
-    distributeCards(3, "player_ul4");
-     
-  // await initializeGame();
+
+
+    // await initializeGame();
 
 })
 
@@ -95,29 +97,38 @@ async function startNewGame() {
         // wenn http-status zwischen 200 und 299 liegt
         // wir lesen den response body
         result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-        const spielId = result.playerId; // Get SpielId from the API response
-            console.log(spielId);
-            alert( "SpielId",spielId);
-            return spielId; 
+        spielId = result.Id; // Get SpielId from the API response
+        console.log("New game started with GameID: " + spielId);
+        alert("SpielId", spielId);
         console.log(result);
-       alert(JSON.stringify(result));
+        alert(JSON.stringify(result));
+
+    //distribute cards inside the startGame() so that the players get new cards every time we start a new game
+        distributeCards(0, "player_ul1");
+        distributeCards(1, "player_ul2");
+        distributeCards(2, "player_ul3");
+        distributeCards(3, "player_ul4");
+        return spielId;
     } else {
         alert("HTTP-Error: " + response.status);
     }
-
 }
+
 
 function distributeCards(playerId, htmlid) {
     let playerlist = document.getElementById(htmlid);
     let i = 0;
-    
+
+while(playerlist.firstChild){
+    playerlist.removeChild(playerlist.firstChild);
+}
     while (i < result.Players[playerId].Cards.length) {
         let img = document.createElement("img");
-        let cardColor = result.Players[0].Cards[i].Color;
-        let cardNumber = result.Players[0].Cards[i].Value;
-        let card = cardColor+cardNumber;
+        let cardColor = result.Players[playerId].Cards[i].Color;
+        let cardNumber = result.Players[playerId].Cards[i].Value;
+        let card = cardColor + cardNumber;
         let cardUrl = `${baseUrl}${card}.png`;
-        img.src= cardUrl;
+        img.src = cardUrl;
         console.log(result.Players[0].Cards[i]);
 
         //Karten zur Liste hinzufügen
@@ -135,37 +146,37 @@ function distributeCards(playerId, htmlid) {
 
         //span.textContent =
         // result.Players[playerId].Cards[i].Color +
-       // " " +
-            //result.Players[playerId].Cards[i].Text;
-            i++;
+        // " " +
+        //result.Players[playerId].Cards[i].Text;
+        i++;
     }
 }
 
 
-async function topCard(spielId){
+async function topCard(spielId) {
 
-  // warten auf das promise (alternativ fetch, then notation)
+    // warten auf das promise (alternativ fetch, then notation)
 
-  //const SpielId = 
+    //const SpielId = 
 
-  const response = await fetch(`https://nowaunoweb.azurewebsites.net/api/game/topCard/${spielId}`, {
-      method: 'GET',
-      //body: JSON.stringify(playerNames),
-      headers: {
-          'Content-type': 'application/json; charset=UTF-8',
-      }
-  });
+    const response = await fetch(`https://nowaunoweb.azurewebsites.net/api/game/topCard/${spielId}`, {
+        method: 'GET',
+        //body: JSON.stringify(playerNames),
+        headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+        }
+    });
 
-  // dieser code wird erst ausgeführt wenn fetch fertig ist
-  if (response.ok) {
-      // wenn http-status zwischen 200 und 299 liegt
-      // wir lesen den response body
-      result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-      console.log(result);
-      alert(JSON.stringify(result));
-  } else {
-      alert("HTTP-Error: " + response.status);
-  }
+    // dieser code wird erst ausgeführt wenn fetch fertig ist
+    if (response.ok) {
+        // wenn http-status zwischen 200 und 299 liegt
+        // wir lesen den response body
+        result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
+        console.log(result);
+        alert(JSON.stringify(result));
+    } else {
+        alert("HTTP-Error: " + response.status);
+    }
 
 }
 
