@@ -124,6 +124,7 @@ while(playerlist.firstChild){
 }
     while (i < result.Players[playerId].Cards.length) {
         let img = document.createElement("img");
+        img.className = "card";
         let cardColor = result.Players[playerId].Cards[i].Color;
         let cardNumber = result.Players[playerId].Cards[i].Value;
         let card = cardColor + cardNumber;
