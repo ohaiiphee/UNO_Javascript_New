@@ -1,8 +1,10 @@
 let result = Object();
 let result2 = Object();
 let result3 = Object();
+let result4 = Object();
 const baseUrl = "uno_karten_originaldesign/";
 let spielId;
+let currentPlayer = Object();
 
 // Modal Dialog for Game Rules
 let gameRules = new bootstrap.Modal(document.getElementById("gameRulesModal"));
@@ -39,9 +41,11 @@ document
     //await initializeGame();
     await topCard(spielId);
     // initializeGame();
+    //await drawCard(spielId);
     await drawCard(spielId);
-  });
 
+    await getCards(spielId, playerName);
+  });
 
 function playerCreation() {
   let error = 0;
@@ -107,6 +111,7 @@ async function startNewGame() {
     result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
     //SpielId hier in der globalen Variabel speichern
     spielId = result.Id;
+    currentPlayer = result.NextPlayer;
     console.log("Hier ist die SpielId zu finden: "); // Get SpielId from the API response
     console.log(spielId);
     //alert("SpielId", spielId);
@@ -172,7 +177,6 @@ async function topCard(spielId) {
   topCardDiv.appendChild(li);
   document.getElementById("myPlayersClass").appendChild(topCardDiv);
 
-
   const response = await fetch(
     `https://nowaunoweb.azurewebsites.net/api/game/topCard/${spielId}`,
     {
@@ -207,50 +211,95 @@ async function topCard(spielId) {
   }
 }*/
 
-async function drawCard(spielId){
+async function drawCard(spielId) {
+  const drawCardDiv = document.createElement("Div");
+  drawCardDiv.className = "drawcard-container";
 
-    let drawCardButton = document.getElementById("drawButton");
-    drawCardButton.innerHTML =
-    <img src="uno_karten_originaldesign\back0.png"></img>
+  let img = document.createElement("img");
+  //let cardUrl = `${baseUrl}${back0}.png`;
 
-    const drawCardDiv = document.createElement("Div");
-    drawCardDiv.className = "drawcard-container";
-  
-    let img = document.createElement("img");
-    let cardColor = result.TopCard.Color;
-    let cardNumber = result.TopCard.Value;
-    //let cardNumber = result2.TopCard[spielId].Value;
-    let card = cardColor + cardNumber;
-    let cardUrl = `${baseUrl}${card}.png`;
-    img.src = cardUrl;
-  
-    const li = document.createElement("li");
-    console.log("li: ", li);
-    li.appendChild(img);
-  
+  img.src = "uno_karten_originaldesign/back0.png";
 
+  const li = document.createElement("li");
+  li.appendChild(img);
+  drawCardDiv.appendChild(li);
+  document.getElementById("myPlayersClass").appendChild(drawCardDiv);
 
+  drawCardDiv.addEventListener("click", async function () {
     const response = await fetch(
-        `https://nowaunoweb.azurewebsites.net/api/game/drawCard/${spielId}`,
-        {
-          method: "PUT",
-          //body: JSON.stringify(playerNames),
-          headers: {
-            "Content-type": "application/json; charset=UTF-8",
-          },
-        }
-      );
-      // dieser code wird erst ausgeführt wenn fetch fertig ist
-      if (response.ok) {
-        // wenn http-status zwischen 200 und 299 liegt
-        // wir lesen den response body
-        result3 = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-        console.log("The drawcard is: "), console.log(result3);
-        alert(JSON.stringify(result3));
-      } else {
-        alert("HTTP-Error: " + response.status);
+      `https://nowaunoweb.azurewebsites.net/api/game/drawCard/${spielId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-type": "application/json; charset=UTF-8",
+        },
       }
-      result3;
+    );
+    // dieser code wird erst ausgeführt wenn fetch fertig ist
+    if (response.ok) {
+      // wenn http-status zwischen 200 und 299 liegt
+      // wir lesen den response body
+      result3 = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
+      console.log("The drawcard is: ", result3);
+      alert(JSON.stringify(result3));
+      currentPlayer = result3.NextPlayer;
+      addCard(currentPlayer);
+      //ChatGBT-version
+      //return result3;
+    } else {
+      alert("HTTP-Error: " + response.status);
+    }
+  });
 }
 
+/*let drawCardButton = document.getElementById("drawButton");
 
+    drawCardButton.innerHTML =
+*/
+
+async function addCard(htmlid, playerId) {
+  let playerlist = document.getElementById(htmlid);
+  let i = 0;
+
+  while (result.NextPlayer.Cards) {
+    let img = document.createElement("img");
+    let cardColor = result3.currentPlayer[playerId].Cards[i].Color;
+    let cardNumber = result3.currentPlayer[playerId].Cards[i].Value;
+    card = cardColor + cardNumber;
+    cardUrl = `${baseUrl}${card}.png`;
+    img.src = cardUrl;
+
+    const li = document.createElement("li");
+    console.log("li: ", li);
+
+    li.appendChild(img);
+
+    playerlist.appendChild(li);
+    i++;
+  }
+}
+
+async function getCards(spielId, playerName) {
+  const response = await fetch(
+    `https://nowaunoweb.azurewebsites.net/api/game/getCards/${spielId}?playerName=${playerName}`,
+    {
+      method: "GET",
+      //body: JSON.stringify(playerNames),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    }
+  );
+  // dieser code wird erst ausgeführt wenn fetch fertig ist
+  if (response.ok) {
+    // wenn http-status zwischen 200 und 299 liegt
+    // wir lesen den response body
+    result4 = await response.json(); // alternativ response .text wenn nicht json gewünscht ist
+    console.log("the card is: "), console.log(result3);
+    playerName = result3.NextPlayer;
+    alert(JSON.stringify(result3));
+  } else {
+    alert("HTTP-Error: " + response.status);
+  }
+  return result3;
+}

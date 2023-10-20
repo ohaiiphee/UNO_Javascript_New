@@ -98,13 +98,28 @@ li {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-70%, -50%);
   image-resolution: 10rem;
   resize: both;
   max-width: 100%;
 }
 
 .topcard-container img {
+    width: 50%;
+    height: auto;
+  }
+
+  .drawcard-container{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-10%, -50%);
+    image-resolution: 10rem;
+    resize: both;
+    max-width: 100%;
+  }
+
+  .drawcard-container img {
     width: 50%;
     height: auto;
   }
