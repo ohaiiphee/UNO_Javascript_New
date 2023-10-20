@@ -3,6 +3,7 @@ let result2 = Object();
 let result3 = Object();
 const baseUrl = "uno_karten_originaldesign/";
 let spielId = Object();
+let currentPlayer = Object();
 let playerPoints = [];
 let playCardResponse = Object();
 
@@ -109,6 +110,7 @@ async function startNewGame() {
         // wir lesen den response body
         result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
         spielId = result.Id; // Get SpielId from the API response
+        currentPlayer = result.NextPlayer;
         playerPoints = result.Players.map(player => player.Score);
         console.log("New game started with GameID: " + spielId);
         //alert("SpielId", spielId);
@@ -235,13 +237,14 @@ async function clickCard(ev) {
 }
 
 
+//not working
 async function tryToPlayCard(value, color) {
 
-    let wildColor = "not_being_used_right_now";
+    let wildColor = "";
     let gameID = result.Id;
-    let URL = "https://nowaunoweb.azurewebsites.net/api/Game/PlayCard/" + gameID + "?value=" + value + "&color" + color + "&wildColor=" + wildColor;
+    let URL = "https://nowaunoweb.azurewebsites.net/api/Game/PlayCard/" + gameID + "?value=" + value + "&color=" + color + "&wildColor=" + wildColor;
 
-    playCardResponse = await fetch(URL,
+    const response = await fetch(URL,
         {
             method: "PUT",
             //body: JSON.stringify(playerNames),
@@ -254,7 +257,6 @@ async function tryToPlayCard(value, color) {
     if (response.ok) {
         playCardResponse = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
         console.log("congratz card was played");
-        
     } else {
         console.log("nope can't play that one");
         alert("HTTP-Error: " + response.status);
