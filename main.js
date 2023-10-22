@@ -2,7 +2,7 @@ let result = Object();
 let result2 = Object();
 let result3 = Object();
 const baseUrl = "uno_karten_originaldesign/";
-let spielId = Object();
+let gameID = Object();
 let currentPlayer = Object();
 let playerPoints = [];
 let playCardResponse = Object();
@@ -38,12 +38,7 @@ document.getElementById('playerNamesForm').addEventListener('submit', async func
 
     //start the game
     await startNewGame();
-    await topCard(spielId);
-
-
-
-
-    // await initializeGame();
+    await topCard(gameID);
 
 });
 
@@ -109,11 +104,11 @@ async function startNewGame() {
         // wenn http-status zwischen 200 und 299 liegt
         // wir lesen den response body
         result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-        spielId = result.Id; // Get SpielId from the API response
+        gameID = result.Id; // Get SpielId from the API response
         currentPlayer = result.NextPlayer;
         playerPoints = result.Players.map(player => player.Score);
-        console.log("New game started with GameID: " + spielId);
-        //alert("SpielId", spielId);
+        console.log("New game started with GameID: " + gameID);
+        //alert("SpielId", gameID);
         console.log(result);
         for (let i = 0; i <= 3; i++) {
             const pointsSpan = document.createElement("span");
@@ -129,7 +124,7 @@ async function startNewGame() {
         distributeCards(1, "player_ul2");
         distributeCards(2, "player_ul3");
         distributeCards(3, "player_ul4");
-        return spielId;
+        return gameID;
     } else {
         alert("HTTP-Error: " + response.status);
     }
@@ -155,11 +150,11 @@ function distributeCards(playerId, htmlid) {
         img.addEventListener("click", clickCard, false);
         img.cardColor = cardColor;
         img.cardValue = cardNumber;
-        console.log(result.Players[0].Cards[i]);
+        //console.log(result.Players[i].Cards[i]);
 
         //Karten zur Liste hinzufügen
         const li = document.createElement("li");
-        console.log("li: ", li);
+        //console.log("li: ", li);
 
         li.appendChild(img);
 
@@ -179,7 +174,7 @@ function distributeCards(playerId, htmlid) {
 }
 
 
-async function topCard(spielId) {
+async function topCard(gameID) {
 
     //if topcard img already exists, delete it to replace with new one --TEST IF NEEDED
 
@@ -194,13 +189,13 @@ async function topCard(spielId) {
     let img = document.createElement("img");
     let cardColor = result.TopCard.Color;
     let cardNumber = result.TopCard.Value;
-    //let cardNumber = result2.TopCard[spielId].Value;
+    //let cardNumber = result2.TopCard[gameID].Value;
     let card = cardColor + cardNumber;
     let cardUrl = `${baseUrl}${card}.png`;
     img.src = cardUrl;
 
     const li = document.createElement("li");
-    console.log("li: ", li);
+    //console.log("li: ", li);
     li.appendChild(img);
 
     topCardDiv.appendChild(li);
@@ -208,7 +203,7 @@ async function topCard(spielId) {
 
 
     const response = await fetch(
-        `https://nowaunoweb.azurewebsites.net/api/game/topCard/${spielId}`,
+        `https://nowaunoweb.azurewebsites.net/api/game/topCard/${gameID}`,
         {
             method: "GET",
             //body: JSON.stringify(playerNames),
@@ -237,7 +232,6 @@ async function clickCard(ev) {
 }
 
 
-//not working
 async function tryToPlayCard(value, color) {
 
     let wildColor = "";
@@ -253,13 +247,44 @@ async function tryToPlayCard(value, color) {
             },
         }
     );
+    playCardResponse = await response.json();
     // dieser code wird erst ausgeführt wenn fetch fertig ist
-    if (response.ok) {
-        playCardResponse = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-        console.log("congratz card was played");
+    if (playCardResponse.error) {
+        alert("nope can't play that one");
     } else {
-        console.log("nope can't play that one");
-        alert("HTTP-Error: " + response.status);
+        // alternativ response.text wenn nicht json gewünscht ist
+        removeCardFromHand(currentPlayer, value, color);
+        currentPlayer = playCardResponse;
+        console.log("The current player is:");
+        console.log(currentPlayer);
     }
+}
+
+async function removeCardFromHand(currentPlayer, value, color) {
+    const playerHandElement = document.getElementById(`${currentPlayer}`);
+
+    if (playerHandElement) {
+
+        let expectedSrc = buildSrcString(color, value);
+
+        const cardImages = playerHandElement.querySelectorAll("li img");
+
+        for (const cardImage of cardImages) {
+            if (cardImage.cardValue=== value && cardImage.cardColor === color) {
+                // Remove the card image from the player's hand
+                cardImage.parentNode.remove();
+                console.log(`Removed card with value ${value} and color ${color} from ${currentPlayer}'s hand.`);
+                return; // Exit the loop once the card is found and removed.
+            }
+        }
+
+        console.log(`Card with value ${value} and color ${color} not found in ${currentPlayer}'s hand.`);
+    } else {
+        console.log(`Player hand for ${currentPlayer} not found.`);
+    }
+}
+
+function buildSrcString(color, number) {
+    return `${baseUrl}${color + number}.png`;
 }
 
