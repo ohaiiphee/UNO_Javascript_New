@@ -3,13 +3,21 @@ let result2 = Object();
 let result3 = Object();
 let result4 = Object();
 const baseUrl = "uno_karten_originaldesign/";
-let spielId;
+let gameID = Object();
 let currentPlayer = Object();
+let playerPoints = [];
+let playCardResponse = Object();
+let playerName;
+//Button to start a new Game
+let newGameButton = document.getElementById("newGameButton");
+newGameButton.addEventListener("click", async function () {
+  await startNewGame();
+})
 
 // Modal Dialog for Game Rules
 let gameRules = new bootstrap.Modal(document.getElementById("gameRulesModal"));
-let button = document.getElementById("gameRulesButton");
-button.onclick = function () {
+let gameRulesButton = document.getElementById("gameRulesButton");
+gameRulesButton.onclick = function () {
   gameRules.show();
 };
 
@@ -32,19 +40,13 @@ document
 
     //start the game
     await startNewGame();
-
-    distributeCards(0, "player_ul1");
-    distributeCards(1, "player_ul2");
-    distributeCards(2, "player_ul3");
-    distributeCards(3, "player_ul4");
-
     //await initializeGame();
-    await topCard(spielId);
+    await topCard(gameID);
     // initializeGame();
     //await drawCard(spielId);
-    await drawCard(spielId);
+    await drawCard(gameID);
 
-    await getCards(spielId, playerName);
+   //await getCards(gameID, playerName);
   });
 
 function playerCreation() {
@@ -54,7 +56,7 @@ function playerCreation() {
     const playerName = document.getElementById(`playerName${i}`).value;
 
     //check if any name field is empty
-    if (!playerName[i]) {
+    if (!playerName) {
       alert("Player name can not be empty, please enter a valid name!");
       playerNames.length = 0;
       return;
@@ -110,15 +112,28 @@ async function startNewGame() {
     // wir lesen den response body
     result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
     //SpielId hier in der globalen Variabel speichern
-    spielId = result.Id;
+    gameID = result.Id;
     currentPlayer = result.NextPlayer;
-    console.log("Hier ist die SpielId zu finden: "); // Get SpielId from the API response
-    console.log(spielId);
+    playerPoints = result.Players.map((player) => player.Score);
+    console.log("New game started with GameID: " + gameID); // Get SpielId from the API response
     //alert("SpielId", spielId);
     //return spielId;
     //return result;
     console.log(result);
-    alert(JSON.stringify(result));
+
+    for (let i = 0; i <= 3; i++) {
+      const pointsSpan = document.createElement("span");
+      pointsSpan.id = `playerPoints${i + 1}`;
+      pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
+      document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
+    }
+    console.log(playerPoints);
+    //alert(JSON.stringify(result));
+    distributeCards(0, "player_ul1");
+    distributeCards(1, "player_ul2");
+    distributeCards(2, "player_ul3");
+    distributeCards(3, "player_ul4");
+    return gameID;
   } else {
     alert("HTTP-Error: " + response.status);
   }
@@ -127,13 +142,23 @@ async function startNewGame() {
 function distributeCards(playerId, htmlid) {
   let playerlist = document.getElementById(htmlid);
   let i = 0;
+
+  while (playerlist.firstChild) {
+    playerlist.removeChild(playerlist.firstChild);
+  }
+
   while (i < result.Players[playerId].Cards.length) {
     let img = document.createElement("img");
+    img.className = "card";
     let cardColor = result.Players[playerId].Cards[i].Color;
     let cardNumber = result.Players[playerId].Cards[i].Value;
     let card = cardColor + cardNumber;
     let cardUrl = `${baseUrl}${card}.png`;
     img.src = cardUrl;
+
+    img.addEventListener("click", clickCard, false);
+    img.cardColor = cardColor;
+    img.cardValue = cardNumber;
     //console.log(result.Players[0].Cards[i]);
 
     //Karten zur Liste hinzufügen
@@ -157,7 +182,7 @@ function distributeCards(playerId, htmlid) {
   }
 }
 
-async function topCard(spielId) {
+async function topCard(gameID) {
   //let topcard = result2.TopCard;
   const topCardDiv = document.createElement("Div");
   topCardDiv.className = "topcard-container";
@@ -178,7 +203,7 @@ async function topCard(spielId) {
   document.getElementById("myPlayersClass").appendChild(topCardDiv);
 
   const response = await fetch(
-    `https://nowaunoweb.azurewebsites.net/api/game/topCard/${spielId}`,
+    `https://nowaunoweb.azurewebsites.net/api/game/topCard/${gameID}`,
     {
       method: "GET",
       //body: JSON.stringify(playerNames),
@@ -193,11 +218,80 @@ async function topCard(spielId) {
     // wir lesen den response body
     result2 = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
     console.log("The Topcard is: "), console.log(result2);
-    alert(JSON.stringify(result2));
+    //alert(JSON.stringify(result2));
   } else {
     alert("HTTP-Error: " + response.status);
   }
   result2.topCard;
+}
+
+async function clickCard(ev) {
+  console.log(ev);
+  tryToPlayCard(ev.target.cardValue, ev.target.cardColor);
+}
+
+async function tryToPlayCard(value, color) {
+  let wildColor = "";
+  let gameID = result.Id;
+  let URL =
+    "https://nowaunoweb.azurewebsites.net/api/Game/PlayCard/" +
+    gameID +
+    "?value=" +
+    value +
+    "&color=" +
+    color +
+    "&wildColor=" +
+    wildColor;
+
+  const response = await fetch(URL, {
+    method: "PUT",
+    //body: JSON.stringify(playerNames),
+    headers: {
+      "Content-type": "application/json; charset=UTF-8",
+    },
+  });
+  playCardResponse = await response.json();
+  // dieser code wird erst ausgeführt wenn fetch fertig ist
+  if (playCardResponse.error) {
+    alert("nope can't play that one");
+  } else {
+    // alternativ response.text wenn nicht json gewünscht ist
+    removeCardFromHand(currentPlayer, value, color);
+    currentPlayer = playCardResponse;
+    console.log("The current player is:");
+    console.log(currentPlayer);
+  }
+}
+
+async function removeCardFromHand(currentPlayer, value, color) {
+  const playerHandElement = document.getElementById(`${currentPlayer}`);
+
+  if (playerHandElement) {
+    let expectedSrc = buildSrcString(color, value);
+
+    const cardImages = playerHandElement.querySelectorAll("li img");
+
+    for (const cardImage of cardImages) {
+      if (cardImage.cardValue === value && cardImage.cardColor === color) {
+        // Remove the card image from the player's hand
+        cardImage.parentNode.remove();
+        console.log(
+          `Removed card with value ${value} and color ${color} from ${currentPlayer}'s hand.`
+        );
+        return; // Exit the loop once the card is found and removed.
+      }
+    }
+
+    console.log(
+      `Card with value ${value} and color ${color} not found in ${currentPlayer}'s hand.`
+    );
+  } else {
+    console.log(`Player hand for ${currentPlayer} not found.`);
+  }
+}
+
+function buildSrcString(color, number) {
+  return `${baseUrl}${color + number}.png`;
 }
 
 /*async function initializeGame() {
@@ -211,7 +305,7 @@ async function topCard(spielId) {
   }
 }*/
 
-async function drawCard(spielId) {
+async function drawCard(gameID) {
   const drawCardDiv = document.createElement("Div");
   drawCardDiv.className = "drawcard-container";
 
@@ -227,7 +321,7 @@ async function drawCard(spielId) {
 
   drawCardDiv.addEventListener("click", async function () {
     const response = await fetch(
-      `https://nowaunoweb.azurewebsites.net/api/game/drawCard/${spielId}`,
+      `https://nowaunoweb.azurewebsites.net/api/game/drawCard/${gameID}`,
       {
         method: "PUT",
         headers: {
@@ -242,8 +336,22 @@ async function drawCard(spielId) {
       result3 = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
       console.log("The drawcard is: ", result3);
       alert(JSON.stringify(result3));
-      currentPlayer = result3.NextPlayer;
-      addCard(currentPlayer);
+
+      currentPlayer = result3.Player;
+
+      if (result.Players[0].Player == currentPlayer) {
+        await addCard(currentPlayer, "player_ul1");
+      } else if (result.Players[1].Player == currentPlayer) {
+         await addCard(currentPlayer, "player_ul2");
+      } else if (result.Players[2].Player == currentPlayer) {
+        await addCard(currentPlayer, "player_ul3");
+      } else if (result.Players[3].Player == currentPlayer) {
+        await addCard(currentPlayer, "player_ul4");
+      }
+
+      //currentPlayer = result3.NextPlayer;
+
+      //addCard(currentPlayer, `player_ul${currentPlayer.Index + 1}`);
       //ChatGBT-version
       //return result3;
     } else {
@@ -257,31 +365,36 @@ async function drawCard(spielId) {
     drawCardButton.innerHTML =
 */
 
-async function addCard(htmlid, playerId) {
+async function addCard(playerId, htmlid) {
   let playerlist = document.getElementById(htmlid);
-  let i = 0;
+  let i =0;
+  //let playerDrawCard = result3.Player;
 
-  while (result.NextPlayer.Cards) {
-    let img = document.createElement("img");
-    let cardColor = result3.currentPlayer[playerId].Cards[i].Color;
-    let cardNumber = result3.currentPlayer[playerId].Cards[i].Value;
-    card = cardColor + cardNumber;
-    cardUrl = `${baseUrl}${card}.png`;
-    img.src = cardUrl;
+  //while(playerDrawCard == result.Players[playerId]){
 
-    const li = document.createElement("li");
-    console.log("li: ", li);
+  while (i < result.Players[playerId].Cards.length) {
 
-    li.appendChild(img);
+  let img = document.createElement("img");
+  let cardColor = result.Players[playerId].Cards[i].Color;
+  let cardNumber = result.Players[playerId].Cards[i].Value;
+  card = cardColor + cardNumber;
+  cardUrl = `${baseUrl}${card}.png`;
+  img.src = cardUrl;
 
-    playerlist.appendChild(li);
-    i++;
-  }
+  const li = document.createElement("li");
+  console.log("li: ", li);
+
+  li.appendChild(img);
+
+  playerlist.appendChild(li);
+  //}
+  i++;
+}
 }
 
-async function getCards(spielId, playerName) {
+/*async function getCards(gameID, playerName) {
   const response = await fetch(
-    `https://nowaunoweb.azurewebsites.net/api/game/getCards/${spielId}?playerName=${playerName}`,
+    `https://nowaunoweb.azurewebsites.net/api/game/getCards/${gameID}?playerName=${playerName}`,
     {
       method: "GET",
       //body: JSON.stringify(playerNames),
@@ -296,10 +409,11 @@ async function getCards(spielId, playerName) {
     // wir lesen den response body
     result4 = await response.json(); // alternativ response .text wenn nicht json gewünscht ist
     console.log("the card is: "), console.log(result3);
-    playerName = result3.NextPlayer;
+    playerName = result4.NextPlayer;
     alert(JSON.stringify(result3));
   } else {
     alert("HTTP-Error: " + response.status);
   }
   return result3;
 }
+*/

@@ -109,6 +109,11 @@ li {
     height: auto;
   }
 
+  .card:hover {
+    transform: translateY(-10px);
+    transition: transform 0.2s ease;
+}
+
   .drawcard-container{
     position: absolute;
     top: 50%;
