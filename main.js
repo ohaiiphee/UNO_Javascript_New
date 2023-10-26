@@ -360,19 +360,47 @@ async function drawCard(gameID) {
   });
 }
 
+async function addCard(playerId, htmlid) {
+  let playerlist = document.getElementById(htmlid);
+  let i = 0;
+  //let playerDrawCard = result3.Player;
+
+  //while(playerDrawCard == result.Players[playerId]){
+
+
+  let img = document.createElement("img");
+  let cardColor = result3.Card.Color;
+  let cardNumber = result3.Card.Value;
+  card = cardColor + cardNumber;
+  cardUrl = `${baseUrl}${card}.png`;
+  img.src = cardUrl;
+
+  const li = document.createElement("li");
+  console.log("li: ", li);
+
+  li.appendChild(img);
+
+  playerlist.appendChild(li);
+  //}
+
+
+}
+
+
+
 /*let drawCardButton = document.getElementById("drawButton");
 
     drawCardButton.innerHTML =
 */
 
-async function addCard(playerId, htmlid) {
+/*async function addCard(playerId, htmlid) {
   let playerlist = document.getElementById(htmlid);
-  let i =0;
+  let i = 0;
   //let playerDrawCard = result3.Player;
 
   //while(playerDrawCard == result.Players[playerId]){
 
-  while (i < result.Players[playerId].Cards.length) {
+ while (i < result.Players[playerId].Cards.length) {
 
   let img = document.createElement("img");
   let cardColor = result.Players[playerId].Cards[i].Color;
@@ -388,9 +416,11 @@ async function addCard(playerId, htmlid) {
 
   playerlist.appendChild(li);
   //}
-  i++;
+ i++;
 }
 }
+
+
 
 /*async function getCards(gameID, playerName) {
   const response = await fetch(
