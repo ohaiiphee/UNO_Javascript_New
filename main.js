@@ -339,14 +339,14 @@ async function drawCard(gameID) {
 
       currentPlayer = result3.Player;
 
-      if (result.Players[0].Player == currentPlayer) {
-        await addCard(currentPlayer, "player_ul1");
-      } else if (result.Players[1].Player == currentPlayer) {
-         await addCard(currentPlayer, "player_ul2");
-      } else if (result.Players[2].Player == currentPlayer) {
-        await addCard(currentPlayer, "player_ul3");
-      } else if (result.Players[3].Player == currentPlayer) {
-        await addCard(currentPlayer, "player_ul4");
+      if (currentPlayer == result.Players[0].Player ) {
+        await addCard(0, "player_ul1");
+      } else if (currentPlayer == result.Players[1].Player) {
+         await addCard(1, "player_ul2");
+      } else if (currentPlayer == result.Players[2].Player) {
+        await addCard(2, "player_ul3");
+      } else if (currentPlayer == result.Players[3].Player) {
+        await addCard(3, "player_ul4");
       }
 
       //currentPlayer = result3.NextPlayer;
