@@ -266,10 +266,10 @@ async function removeCardFromHand(currentPlayer, value, color) {
 
         const cardImages = playerHandElement.querySelectorAll("li img");
 
-        for (const cardImage of cardImages) {
-            if (cardImage.cardValue=== value && cardImage.cardColor === color) {
+        for (let i = 0; i < cardImages.length; i++) {
+            if (cardImages[i].cardValue === value && cardImages[i].cardColor === color) {
                 // Remove the card image from the player's hand
-                cardImage.parentNode.remove();
+                cardImages[i].parentNode.remove();
                 console.log(`Removed card with value ${value} and color ${color} from ${currentPlayer}'s hand.`);
                 return; // Exit the loop once the card is found and removed.
             }
@@ -352,7 +352,7 @@ async function drawCard(gameID) {
         // wir lesen den response body
         result3 = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
         console.log("The drawcard is: ", result3);
-        alert(JSON.stringify(result3));
+        //alert(JSON.stringify(result3));
   
         currentPlayer = result3.Player;
   
@@ -366,7 +366,7 @@ async function drawCard(gameID) {
           await addCard(3, "player_ul4");
         }
   
-        //currentPlayer = result3.NextPlayer;
+        currentPlayer = result3.NextPlayer;
   
         //addCard(currentPlayer, `player_ul${currentPlayer.Index + 1}`);
         //ChatGBT-version
@@ -387,7 +387,11 @@ async function drawCard(gameID) {
     let cardNumber = result3.Card.Value;
     card = cardColor + cardNumber;
     cardUrl = `${baseUrl}${card}.png`;
+    img.className = "card";
+    img.cardColor = cardColor;
+    img.cardValue = cardNumber;
     img.src = cardUrl;
+    
   
     const li = document.createElement("li");
     console.log("li: ", li);
@@ -395,6 +399,6 @@ async function drawCard(gameID) {
     li.appendChild(img);
   
     playerlist.appendChild(li);
-    
+    img.addEventListener("click", clickCard, false);
   }
 
