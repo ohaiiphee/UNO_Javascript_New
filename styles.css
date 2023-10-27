@@ -123,3 +123,19 @@ li {
     transform: translateY(-10px);
     transition: transform 0.2s ease;
 }
+
+.drawcard-container{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-10%, -50%);
+    image-resolution: 10rem;
+    resize: both;
+    max-width: 100%;
+    margin: 50px;
+  }
+
+  .drawcard-container img {
+    width: 50%;
+    height: auto;
+  }
