@@ -43,6 +43,9 @@ document.getElementById('playerNamesForm').addEventListener('submit', async func
     //start the game
     await startNewGame();
     await drawCard(gameID);
+    await getCards(gameID, currentPlayer);
+
+    
 
 });
 
@@ -114,20 +117,7 @@ async function startNewGame() {
         //alert("SpielId", gameID);
         console.log(result);
 
-        for (let i = 0; i <= 3; i++) {
-            const pointsSpanId = `playerPoints${i + 1}`;
-            const existingPointsSpan = document.getElementById(pointsSpanId);
-    
-            // Check if the points span already exists and remove it
-            if (existingPointsSpan) {
-                existingPointsSpan.remove();
-            }
-    
-            const pointsSpan = document.createElement("span");
-            pointsSpan.id = pointsSpanId;
-            pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
-            document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
-        }
+        await updatePlayerPoints();
 
         console.log(playerPoints);
 
@@ -148,7 +138,7 @@ async function startNewGame() {
 }
 
 
-function distributeCards(playerId, htmlid) {
+async function distributeCards(playerId, htmlid) {
     let playerlist = document.getElementById(htmlid);
     let i = 0;
 
@@ -183,10 +173,9 @@ function distributeCards(playerId, htmlid) {
 
 async function topCard(gameID) {
 
-    //if topcard img already exists, delete it to replace with new one --TEST IF NEEDED
-
     const topCardDiv = document.createElement("Div");
 
+    //if topcard img already exists, delete it to replace with new one
     while (topCardDiv.firstChild) {
         topCardDiv.removeChild(topCardDiv.firstChild);
     }
@@ -263,9 +252,12 @@ async function tryToPlayCard(value, color) {
     } else {
         // alternativ response.text wenn nicht json gewünscht ist
         removeCardFromHand(currentPlayer, value, color);
+        await getCards(gameID, currentPlayer);
+
         currentPlayer = playCardResponse.Player;
         console.log("The current player is:" + currentPlayer);
         await updateTopCard();
+        await updatePlayerPoints();
     }
 }
 
@@ -377,6 +369,8 @@ async function drawCard(gameID) {
         }
   
         currentPlayer = result3.NextPlayer;
+
+        await updatePlayerPoints();
   
         //addCard(currentPlayer, `player_ul${currentPlayer.Index + 1}`);
         //ChatGBT-version
@@ -410,5 +404,55 @@ async function drawCard(gameID) {
   
     playerlist.appendChild(li);
     img.addEventListener("click", clickCard, false);
+
+    await getCards(gameID, currentPlayer);
   }
 
+  async function getCards(gameID, playerName) {
+    let URL = `https://nowaunoweb.azurewebsites.net/api/game/getCards/${gameID}?playerName=${playerName}`;
+  
+    const response = await fetch(URL, {
+      method: "GET",
+      //body: JSON.stringify(playerNames),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+      },
+    });
+    // dieser code wird erst ausgeführt wenn fetch fertig ist
+    if (response.ok) {
+      // wenn http-status zwischen 200 und 299 liegt
+      // wir lesen den response body
+      result4 = await response.json(); // alternativ response .text wenn nicht json gewünscht ist
+      console.log("The current Player has the following cards :", result4);
+
+      const currentPlayerIndex = playerNames.indexOf(playerName);
+      if (currentPlayerIndex !== -1) {
+          playerPoints[currentPlayerIndex] = result4.Score;
+      }
+
+      currentPlayer = result4.Player;
+      updatePlayerPoints();
+      //return currentPlayer;
+      //alert(JSON.stringify(result3));
+    } else {
+      alert("HTTP-Error: " + response.status);
+    }
+    return result4;
+  }
+
+  async function updatePlayerPoints(){
+    for (let i = 0; i <= 3; i++) {
+        const pointsSpanId = `playerPoints${i + 1}`;
+        const existingPointsSpan = document.getElementById(pointsSpanId);
+
+        // Check if the points span already exists and remove it
+        if (existingPointsSpan) {
+            existingPointsSpan.remove();
+        }
+
+        const pointsSpan = document.createElement("span");
+        pointsSpan.id = pointsSpanId;
+        pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
+        document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
+    }
+  }
