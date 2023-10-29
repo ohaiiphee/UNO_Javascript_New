@@ -42,7 +42,6 @@ document.getElementById('playerNamesForm').addEventListener('submit', async func
 
     //start the game
     await startNewGame();
-    await topCard(gameID);
     await drawCard(gameID);
 
 });
@@ -116,8 +115,16 @@ async function startNewGame() {
         console.log(result);
 
         for (let i = 0; i <= 3; i++) {
+            const pointsSpanId = `playerPoints${i + 1}`;
+            const existingPointsSpan = document.getElementById(pointsSpanId);
+    
+            // Check if the points span already exists and remove it
+            if (existingPointsSpan) {
+                existingPointsSpan.remove();
+            }
+    
             const pointsSpan = document.createElement("span");
-            pointsSpan.id = `playerPoints${i + 1}`;
+            pointsSpan.id = pointsSpanId;
             pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
             document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
         }
@@ -129,6 +136,9 @@ async function startNewGame() {
         distributeCards(1, "player_ul2");
         distributeCards(2, "player_ul3");
         distributeCards(3, "player_ul4");
+
+        //topCard is called here so that it also updates everytime we press new game
+        await topCard(gameID);
 
         return gameID;
 
