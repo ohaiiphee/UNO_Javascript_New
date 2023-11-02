@@ -2,6 +2,7 @@ let result = Object();
 let result2 = Object();
 let result3 = Object();
 let result4 = Object();
+let updatedPlayerCards = Object();
 
 const baseUrl = "uno_karten_originaldesign/";
 
@@ -158,11 +159,9 @@ async function distributeCards(playerId, htmlid) {
         img.addEventListener("click", clickCard, false);
         img.cardColor = cardColor;
         img.cardValue = cardNumber;
-        //console.log(result.Players[i].Cards[i]);
 
         //Karten zur Liste hinzufügen
         const li = document.createElement("li");
-        //console.log("li: ", li);
 
         li.appendChild(img);
         playerlist.appendChild(li);
@@ -250,6 +249,18 @@ async function tryToPlayCard(value, color) {
     if (playCardResponse.error) {
         alert("nope can't play that one");
     } else {
+
+        if(value === 10){
+            console.log("this is a +2 card");
+            await updatePlayerCards(); 
+        }
+
+        //+4 can only be played if player has no valid color/number cards
+        if(value === 13){
+            console.log("this is a +4 card");
+        }
+
+
         // alternativ response.text wenn nicht json gewünscht ist
         removeCardFromHand(currentPlayer, value, color);
         await getCards(gameID, currentPlayer);
@@ -423,17 +434,45 @@ async function drawCard(gameID) {
       // wenn http-status zwischen 200 und 299 liegt
       // wir lesen den response body
       result4 = await response.json(); // alternativ response .text wenn nicht json gewünscht ist
-      console.log("The current Player has the following cards :", result4);
+      //console.log("The current Player has the following cards :", result4);
 
       const currentPlayerIndex = playerNames.indexOf(playerName);
+
+      const playerHandElement = document.getElementById(`player_ul${currentPlayerIndex + 1}`);
+
       if (currentPlayerIndex !== -1) {
           playerPoints[currentPlayerIndex] = result4.Score;
       }
 
+      if (playerHandElement) {
+        // Clear the existing player's hand
+        while (playerHandElement.firstChild) {
+            playerHandElement.removeChild(playerHandElement.firstChild);
+        }
+        
+        // Get the current cards for the player and update their hand
+        const playerCards = result4.Cards; // Replace with the correct property in your API response
+        for (let j = 0; j < playerCards.length; j++) {
+            const cardColor = playerCards[j].Color;
+            const cardNumber = playerCards[j].Value;
+            const card = cardColor + cardNumber;
+            const cardUrl = `${baseUrl}${card}.png`;
+            
+            const img = document.createElement("img");
+            img.className = "card";
+            img.cardColor = cardColor;
+            img.cardValue = cardNumber;
+            img.src = cardUrl;
+            img.addEventListener("click", clickCard, false);
+
+            const li = document.createElement("li");
+            li.appendChild(img);
+            playerHandElement.appendChild(li);
+        }
+    }
+
       currentPlayer = result4.Player;
       updatePlayerPoints();
-      //return currentPlayer;
-      //alert(JSON.stringify(result3));
     } else {
       alert("HTTP-Error: " + response.status);
     }
@@ -455,4 +494,10 @@ async function drawCard(gameID) {
         pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
         document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
     }
+  }
+
+  async function updatePlayerCards(){
+    playerNames.forEach(name => {
+        getCards(gameID, name);        
+    });
   }
