@@ -35,6 +35,7 @@ li {
   left: 50%;
   /* adjust as needed */
   transform: translateX(-50%);
+  
 }
 
 #player2 {
@@ -74,6 +75,7 @@ li {
 
 #player_ul2 li {
   transform: rotate(90deg);
+  transform: translateY(0, 50%);
   /* Rotate each card 90 degrees clockwise */
 }
 
@@ -138,4 +140,18 @@ li {
 .drawcard-container img {
   width: 50%;
   height: auto;
+}
+
+.hidden{
+  display: none;
+}
+
+.currentPlayer {
+  color: red;
+  font-size: 40px;
+}
+
+.currentPlayer li img {
+  width: 100%;
+   /* Set the desired width for currentPlayer's cards */
 }

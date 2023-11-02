@@ -3,15 +3,17 @@ let result2 = Object();
 let result3 = Object();
 let result4 = Object();
 
+const playerNames = [];
+
 const baseUrl = "uno_karten_originaldesign/";
 
 let gameID = Object();
 let currentPlayer = Object();
 let playerPoints = [];
 let playCardResponse = Object();
-//let playerName = Object();
+let playerName = Object();
 
-const playerNames = [];
+let currentPlayerIndex = playerNames.indexOf(currentPlayer);
 
 //Button to start a new Game
 let newGameButton = document.getElementById("newGameButton");
@@ -45,7 +47,26 @@ document
     await startNewGame();
     await topCard(gameID);
     await drawCard(gameID);
+
+    //await markCurrentPlayer(currentPlayer, "player1");
+
+    //await hidePlayersCards(1);
+
+    //await showPlayersCards(0);
+
     await getCards(gameID, currentPlayer);
+
+    //await hidePlayersCards(0);
+
+    await showIfActivePlayer(currentPlayerIndex);
+
+    //await showIfActivePlayer(0);
+    //await showIfActivePlayer(1);
+    //await showIfActivePlayer(2);
+    //await showIfActivePlayer(3);
+
+    //await showPlayersCards(currentPlayer);
+    //await showIfActivePlayer(1);
   });
 
 function playerCreation() {
@@ -365,6 +386,8 @@ async function drawCard(gameID) {
 
       currentPlayer = result3.Player;
 
+      await updatePlayerPoints();
+
       if (currentPlayer == result.Players[0].Player) {
         await addCard(0, "player_ul1");
       } else if (currentPlayer == result.Players[1].Player) {
@@ -408,6 +431,7 @@ async function addCard(playerId, htmlid) {
 
   playerlist.appendChild(li);
   img.addEventListener("click", clickCard, false);
+  await getCards(gameID, currentPlayer);
 }
 
 async function getCards(gameID, playerName) {
@@ -425,12 +449,218 @@ async function getCards(gameID, playerName) {
     // wenn http-status zwischen 200 und 299 liegt
     // wir lesen den response body
     result4 = await response.json(); // alternativ response .text wenn nicht json gewünscht ist
-    console.log("The current Player has the following cards :", result4);
+    console.log(
+      "The current Player is:",
+      result4.Player,
+      "and has the following cards :",
+      result4.Cards
+    );
+    currentPlayerIndex = playerNames.indexOf(playerName);
+
+    const playerHandElement = document.getElementById(
+      `player_ul${currentPlayerIndex + 1}`
+    );
+
+    if (currentPlayerIndex !== -1) {
+      playerPoints[currentPlayerIndex] = result4.Score;
+    }
+
+    if (playerHandElement) {
+      // Clear the existing player's hand
+      while (playerHandElement.firstChild) {
+        playerHandElement.removeChild(playerHandElement.firstChild);
+      }
+
+      // Get the current cards for the player and update their hand
+      const playerCards = result4.Cards; // Replace with the correct property in your API response
+      for (let j = 0; j < playerCards.length; j++) {
+        const cardColor = playerCards[j].Color;
+        const cardNumber = playerCards[j].Value;
+        const card = cardColor + cardNumber;
+        const cardUrl = `${baseUrl}${card}.png`;
+
+        const img = document.createElement("img");
+        img.className = "card";
+        img.cardColor = cardColor;
+        img.cardValue = cardNumber;
+        img.src = cardUrl;
+        img.addEventListener("click", clickCard, false);
+
+        const li = document.createElement("li");
+        li.appendChild(img);
+        playerHandElement.appendChild(li);
+        //alert(JSON.stringify(result3));
+        //return currentPlayer;
+      }
+    }
+
     currentPlayer = result4.Player;
-    //return currentPlayer;
-    //alert(JSON.stringify(result3));
+    updatePlayerPoints();
   } else {
     alert("HTTP-Error: " + response.status);
   }
   return result4;
 }
+
+async function hidePlayersCards(playerId) {
+  const playerHandElement = document.getElementById(`player_ul${playerId + 1}`);
+  if (playerHandElement) {
+    const cardImages = playerHandElement.querySelectorAll("li img");
+    cardImages.forEach((card) => {
+      card.src = "uno_karten_originaldesign/back0.png";
+      //card.remove(); // Set the back card image source
+      //card.classList.remove("hidden");
+    });
+  }
+}
+
+async function showPlayersCards(playerId) {
+  //let i = 0;
+  const response = await getCards(gameID, currentPlayer);
+  console.log("the get-Response", response);
+
+  const playerHandElement = document.getElementById(`player_ul${playerId + 1}`);
+
+  //while (i < result.Players[playerId].Cards.length) {
+  //const playerName = document.getElementById(`playerName${i}`).value;
+
+  //if (playerHandElement && response && response.Cards) {
+  if (playerHandElement) {
+    const cardImages = playerHandElement.querySelectorAll("li img");
+    cardImages.forEach((card, index) => {
+      card.remove();
+      
+      //const cardData = response.Cards[index];
+      //card.src = `${baseUrl}${cardData.Color}${cardData.Value}.png`; // Set the correct card image source
+      //card.classList.remove("hidden");
+    });
+  }
+ await updatePlayerCards();
+  //  i++;
+  //}
+}
+
+async function showIfActivePlayer(playerId) {
+  console.log(
+    "Methode aufgerufen, mit currentPlayer :",
+    currentPlayer,
+    " und mit dem Index: ",
+    playerNames.indexOf(currentPlayer)
+  );
+
+  for (let i = 0; i <= 3; i++) {
+    if (i == playerId) {
+      await showPlayersCards(i);
+    } else {
+      await hidePlayersCards(i);
+    }
+  }
+}
+
+async function updatePlayerPoints() {
+  for (let i = 0; i <= 3; i++) {
+    const pointsSpanId = `playerPoints${i + 1}`;
+    const existingPointsSpan = document.getElementById(pointsSpanId);
+
+    // Check if the points span already exists and remove it
+    if (existingPointsSpan) {
+      existingPointsSpan.remove();
+    }
+
+    const pointsSpan = document.createElement("span");
+    pointsSpan.id = pointsSpanId;
+    pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
+    document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
+  }
+}
+
+async function updatePlayerCards() {
+  playerNames.forEach((name) => {
+    getCards(gameID, name);
+  });
+}
+
+/*
+  async function markCurrentPlayer(currentPlayer, playerId) {
+
+   
+    // Remove currentPlayer class from all players
+    const players = document.querySelectorAll('#player1');
+    players.forEach(player => {
+      player.classList.add('currentPlayer');
+    });
+ 
+    // Add currentPlayer class to the active player
+    const activePlayer = document.getElementById(`player${playerId}`);
+    if (activePlayer) {
+      activePlayer.classList.add('currentPlayer');
+    }
+  }
+
+
+
+
+//The following method is supposed to highlight the active player
+async function markCurrentPlayer(currentPlayer) {
+ // let display = document.getElementById('player2');
+//display.textContent = currentPlayer;
+  
+  /*
+  const activePlayer = document.getElementById(`${currentPlayer}`);
+  if(activePlayer){
+
+    const players = document.getElementById(`player${playerId}`);
+    for(let i=0; i<=4; i++ ){
+
+    players.forEach(player => {
+      player.classList.add('currentPlayer');
+     
+    }
+
+    )
+
+  }}
+}
+
+
+  // Remove currentPlayer class from all players
+  //const players = document.querySelectorAll('.image-container');
+  //players.forEach(player => {
+   // player.classList.add('currentPlayer');
+  //});
+  //const players1 = document.querySelectorAll('#player1');
+  const players1 = document.querySelectorAll('#player1');
+  const players2 = document.querySelectorAll('#player2');
+  const player1 =result.Players[0].Player;
+  const player2 =result.Players[2].Player;
+
+
+  //`player${i}`;
+  if(player1 ==currentPlayer){
+  players1.forEach(player => {
+    player.classList.add('currentPlayer');
+   
+  }
+  );
+//player.classList.remove('currentPlayer');
+}else if(player2 ==currentPlayer){
+  players2.forEach(player => {
+    player.classList.add('currentPlayer');
+   
+  });
+
+} 
+
+}
+
+const playerHandElement = document.getElementById(`${currentPlayer}`);
+
+  if (playerHandElement) {
+    const cardImages = playerHandElement.querySelectorAll("li img");
+
+
+  // Add currentPlayer class to the current player's container
+  const currentPlayerContainer = document.getElementById(`player${playerId}`);
+  currentPlayerContainer.classList.add('currentPlayer');
+}
+*/
