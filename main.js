@@ -5,6 +5,9 @@ let getCardsResult = Object();
 
 let selectedColor;
 let colorSelectionPromiseResolver;
+let chosenCardValue;
+let chosenCardColor;
+let colorSelectionModal = new bootstrap.Modal(document.getElementById('colorSelectionModal'));
 
 const baseUrl = "uno_karten_originaldesign/";
 
@@ -208,7 +211,13 @@ async function topCard(gameID) {
 
 //-------------- ClickCard Function for Every Handcard --------------------//
 async function clickCard(ev) {
-    tryToPlayCard(ev.target.cardValue, ev.target.cardColor);
+    chosenCardValue = ev.target.cardValue;
+    chosenCardColor = ev.target.cardColor;
+    if (ev.target.cardValue === 13 || ev.target.cardValue === 14) {
+        colorModal();
+    } else {
+        tryToPlayCard(ev.target.cardValue, ev.target.cardColor);
+    }
 }
 
 
@@ -220,14 +229,12 @@ async function tryToPlayCard(value, color) {
     //+4 Card --> can only be played if player has no valid color/number cards
     if (value === 13) {
         console.log("this is a +4 card");
-        await colorModal();
         wildColor = selectedColor;
     }
 
     //Wild Card
     if (value === 14) {
         console.log("this is a Wild Card");
-        await colorModal();
         wildColor = selectedColor;
     }
 
@@ -247,7 +254,7 @@ async function tryToPlayCard(value, color) {
         alert("nope can't play that one");
     } else {
 
-        
+
 
         removeCardFromHand(currentPlayer, value, color);
         await updatePlayerCards();
@@ -373,7 +380,7 @@ async function drawPile(gameID) {
 //-------------- Add a Card To Player's Hand --------------------//
 async function addCard(playerId, htmlid) {
     let playerlist = document.getElementById(htmlid);
-    let i = 0; 
+    let i = 0;
 
     let img = document.createElement("img");
     let cardColor = drawCardResult.Card.Color;
@@ -407,8 +414,8 @@ async function getCards(gameID, playerName) {
     });
 
     if (response.ok) {
-        
-        getCardsResult = await response.json(); 
+
+        getCardsResult = await response.json();
         const currentPlayerIndex = playerNames.indexOf(playerName);
         const playerHandElement = document.getElementById(`player_ul${currentPlayerIndex + 1}`);
 
@@ -482,23 +489,25 @@ async function updatePlayerCards() {
 
 //-------------- Show the Color Selection Modal --------------------//
 async function colorModal() {
-    const colorSelectionPromise = new Promise((resolve) => {
-        colorSelectionPromiseResolver = resolve;
-    });
-
-    let colorSelectionModal = new bootstrap.Modal(document.getElementById('colorSelectionModal'));
     colorSelectionModal.show();
-    return colorSelectionPromise;
+
+    // Create a function to handle color selection and remove the event listener
+    function handleColorSelection() {
+        selectedColor = document.querySelector('input[name="color"]:checked').value;
+
+        // Remove the event listener to prevent it from being called multiple times
+        document.getElementById('confirmColorSelection').removeEventListener('click', handleColorSelection);
+
+        // Close the color selection modal
+        colorSelectionModal.hide();
+        tryToPlayCard(chosenCardValue, chosenCardColor);
+    }
+
+    // Add the event listener for color selection
+    document.getElementById('confirmColorSelection').addEventListener('click', handleColorSelection);
 }
-    document.getElementById('confirmColorSelection').addEventListener('click', async function () {
-    selectedColor = document.querySelector('input[name="color"]:checked').value;
 
-    console.log("The selected color is: " + selectedColor);
 
-    
-    // Close the color selection modal
-    colorSelectionModal.hide();
-});
 
 
 
