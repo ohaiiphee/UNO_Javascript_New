@@ -3,7 +3,10 @@ let result2 = Object();
 let result3 = Object();
 let result4 = Object();
 
-const playerNames = [];
+
+
+let selectedColor;
+let colorSelectionPromiseResolver;
 
 const baseUrl = "uno_karten_originaldesign/";
 
@@ -12,6 +15,8 @@ let currentPlayer = Object();
 let playerPoints = [];
 let playCardResponse = Object();
 let playerName = Object();
+
+const playerNames = [];
 
 let currentPlayerIndex = playerNames.indexOf(currentPlayer);
 
@@ -58,7 +63,7 @@ document
 
     //await hidePlayersCards(0);
 
-    await showIfActivePlayer(currentPlayerIndex);
+    await showIfActivePlayer();
 
     //await showIfActivePlayer(0);
     //await showIfActivePlayer(1);
@@ -160,6 +165,7 @@ async function startNewGame() {
   }
 }
 
+
 function distributeCards(playerId, htmlid) {
   let playerlist = document.getElementById(htmlid);
   let i = 0;
@@ -252,6 +258,21 @@ async function clickCard(ev) {
 async function tryToPlayCard(value, color) {
   let wildColor = "";
   let gameID = result.Id;
+
+//+4 Card --> can only be played if player has no valid color/number cards
+if (value === 13) {
+  console.log("this is a +4 card");
+  await colorModal();
+  wildColor = selectedColor;
+}
+
+//Wild Card
+if (value === 14) {
+  console.log("this is a Wild Card");
+  await colorModal();
+  wildColor = selectedColor;
+}
+
   let URL =
     "https://nowaunoweb.azurewebsites.net/api/Game/PlayCard/" +
     gameID +
@@ -276,10 +297,16 @@ async function tryToPlayCard(value, color) {
     alert("nope can't play that one");
   } else {
     // alternativ response.text wenn nicht json gewünscht ist
+    result.Player = playCardResponse.Player;
+    result.NextPlayer = playCardResponse.Player;
     removeCardFromHand(currentPlayer, value, color);
+    await updatePlayerCards();
+
+
     currentPlayer = playCardResponse.Player;
     console.log("The current player is:" + currentPlayer);
     await updateTopCard();
+    await updatePlayerPoints();
   }
 }
 
@@ -399,6 +426,7 @@ async function drawCard(gameID) {
       }
 
       currentPlayer = result3.NextPlayer;
+      await updatePlayerPoints();
 
       //addCard(currentPlayer, `player_ul${currentPlayer.Index + 1}`);
       //ChatGBT-version
@@ -431,8 +459,9 @@ async function addCard(playerId, htmlid) {
 
   playerlist.appendChild(li);
   img.addEventListener("click", clickCard, false);
-  await getCards(gameID, currentPlayer);
+  await updatePlayerCards();
 }
+
 
 async function getCards(gameID, playerName) {
   let URL = `https://nowaunoweb.azurewebsites.net/api/game/getCards/${gameID}?playerName=${playerName}`;
@@ -502,6 +531,15 @@ async function getCards(gameID, playerName) {
   return result4;
 }
 
+
+function getCurrentPlayerID(){
+  for(let i=0; i<=3;i++){
+    if(result.NextPlayer === playerNames[i]){
+      return i;
+    }
+  }
+}
+
 async function hidePlayersCards(playerId) {
   const playerHandElement = document.getElementById(`player_ul${playerId + 1}`);
   if (playerHandElement) {
@@ -540,7 +578,7 @@ async function showPlayersCards(playerId) {
   //}
 }
 
-async function showIfActivePlayer(playerId) {
+async function showIfActivePlayer() {
   console.log(
     "Methode aufgerufen, mit currentPlayer :",
     currentPlayer,
@@ -548,8 +586,10 @@ async function showIfActivePlayer(playerId) {
     playerNames.indexOf(currentPlayer)
   );
 
+  const activePlayer = getCurrentPlayerID();
+
   for (let i = 0; i <= 3; i++) {
-    if (i == playerId) {
+    if (i === activePlayer) {
       await showPlayersCards(i);
     } else {
       await hidePlayersCards(i);
@@ -579,6 +619,27 @@ async function updatePlayerCards() {
     getCards(gameID, name);
   });
 }
+
+
+//-------------- Show the Color Selection Modal --------------------//
+async function colorModal() {
+  const colorSelectionPromise = new Promise((resolve) => {
+      colorSelectionPromiseResolver = resolve;
+  });
+
+  let colorSelectionModal = new bootstrap.Modal(document.getElementById('colorSelectionModal'));
+  colorSelectionModal.show();
+  return colorSelectionPromise;
+}
+  document.getElementById('confirmColorSelection').addEventListener('click', async function () {
+  selectedColor = document.querySelector('input[name="color"]:checked').value;
+
+  console.log("The selected color is: " + selectedColor);
+
+  
+  // Close the color selection modal
+  colorSelectionModal.hide();
+});
 
 /*
   async function markCurrentPlayer(currentPlayer, playerId) {
