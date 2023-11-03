@@ -3,6 +3,9 @@ let topCardResult = Object();
 let drawCardResult = Object();
 let getCardsResult = Object();
 
+let selectedColor;
+let colorSelectionPromiseResolver;
+
 const baseUrl = "uno_karten_originaldesign/";
 
 let gameID = Object();
@@ -35,7 +38,6 @@ let myModal = new bootstrap.Modal(document.getElementById('playerNames'));
 myModal.show();
 
 document.getElementById('playerNamesForm').addEventListener('submit', async function (evt) {
-    console.log("submit works");
     evt.preventDefault();
 
     playerCreation(); //create player divs
@@ -214,6 +216,21 @@ async function clickCard(ev) {
 async function tryToPlayCard(value, color) {
     let wildColor = "";
     let gameID = result.Id;
+
+    //+4 Card --> can only be played if player has no valid color/number cards
+    if (value === 13) {
+        console.log("this is a +4 card");
+        await colorModal();
+        wildColor = selectedColor;
+    }
+
+    //Wild Card
+    if (value === 14) {
+        console.log("this is a Wild Card");
+        await colorModal();
+        wildColor = selectedColor;
+    }
+
     let URL = "https://nowaunoweb.azurewebsites.net/api/Game/PlayCard/" + gameID + "?value=" + value + "&color=" + color + "&wildColor=" + wildColor;
 
     const response = await fetch(URL,
@@ -230,10 +247,7 @@ async function tryToPlayCard(value, color) {
         alert("nope can't play that one");
     } else {
 
-        //+4 can only be played if player has no valid color/number cards
-        if (value === 13) {
-            console.log("this is a +4 card");
-        }
+        
 
         removeCardFromHand(currentPlayer, value, color);
         await updatePlayerCards();
@@ -258,7 +272,7 @@ async function removeCardFromHand(currentPlayer, value, color) {
                 return; // Exit the loop once the card is found and removed
             }
         }
-        console.log(`Card with value ${value} and color ${color} not found in ${currentPlayer}'s hand.`);
+        //console.log(`Card with value ${value} and color ${color} not found in ${currentPlayer}'s hand.`);
     } else {
         console.log(`Player hand for ${currentPlayer} not found.`);
     }
@@ -464,3 +478,28 @@ async function updatePlayerCards() {
         getCards(gameID, name);
     });
 }
+
+
+//-------------- Show the Color Selection Modal --------------------//
+async function colorModal() {
+    const colorSelectionPromise = new Promise((resolve) => {
+        colorSelectionPromiseResolver = resolve;
+    });
+
+    let colorSelectionModal = new bootstrap.Modal(document.getElementById('colorSelectionModal'));
+    colorSelectionModal.show();
+    return colorSelectionPromise;
+}
+    document.getElementById('confirmColorSelection').addEventListener('click', async function () {
+    selectedColor = document.querySelector('input[name="color"]:checked').value;
+
+    console.log("The selected color is: " + selectedColor);
+
+    
+    // Close the color selection modal
+    colorSelectionModal.hide();
+});
+
+
+
+
