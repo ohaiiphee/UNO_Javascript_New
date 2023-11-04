@@ -35,7 +35,6 @@ li {
   left: 50%;
   /* adjust as needed */
   transform: translateX(-50%);
-  
 }
 
 #player2 {
@@ -74,13 +73,14 @@ li {
 }
 
 #player_ul2 li {
-  transform: rotate(90deg);
-  transform: translateY(0, 50%);
+  transform: rotate(-90deg);
+  transform: translateY(0,50%);
   /* Rotate each card 90 degrees clockwise */
 }
 
 #player_ul4 li {
-  transform: rotate(-90deg);
+  transform: rotate(90deg);
+  transform: translateY(50%,0);
   /* Rotate each card 90 degrees counterclockwise */
 }
 
@@ -154,4 +154,8 @@ li {
 .currentPlayer li img {
   width: 100%;
    /* Set the desired width for currentPlayer's cards */
+}
+
+.uno-button{
+  display : "block";
 }

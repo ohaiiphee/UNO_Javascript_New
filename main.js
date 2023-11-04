@@ -3,12 +3,21 @@ let topCardResult = Object();
 let drawCardResult = Object();
 let getCardsResult = Object();
 
+//Shout UNO when only one card left
+const unoSound = new Audio(
+  "WhatsApp Audio 2023-11-04 um 14.39.10_30ef3f1e.mp3"
+);
+
 let selectedColor;
 let colorSelectionPromiseResolver;
 let chosenCardValue;
 let chosenCardColor;
 let colorSelectionModal = new bootstrap.Modal(
   document.getElementById("colorSelectionModal")
+);
+
+let showSelectedColorModal = new bootstrap.Modal(
+  document.getElementById("showSelectedColorModal")
 );
 
 const baseUrl = "uno_karten_originaldesign/";
@@ -25,6 +34,27 @@ const playerNames = [];
 let newGameButton = document.getElementById("newGameButton");
 newGameButton.addEventListener("click", async function () {
   await startNewGame();
+});
+
+
+
+let unoButton = document.getElementById("uno-button");
+unoButton.addEventListener("click", async function () {
+  //handleUnoClick(index);
+  for (let i = 0; i <= 3; i++) {
+
+    const ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
+    const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
+    
+    if (lis.length > 1) {
+      alert("You have more than one card, you can´t say uno");
+      await addCard(i, `player_ul${i}`);
+      await addCard(i, `player_ul${i}`);
+    } else if(lis.length === 1) {
+      await shoutUNO();
+      unoSound.play();
+    }
+  }
 });
 
 //-------------- Modal Dialog for Game Rules --------------------//
@@ -47,14 +77,15 @@ document
     playerCreation(); //create player divs
     await startNewGame();
 
-    await showIfActivePlayer();
+    //await showIfActivePlayer();
 
     await drawPile(gameID);
     await showIfActivePlayer();
-    
+    //await showIfActivePlayer();
+
     //await getCards(gameID, currentPlayer);
 
-    await winnerAlert();
+    winnerAlert();
   });
 
 //-------------- Create Players --------------------//
@@ -231,17 +262,13 @@ async function tryToPlayCard(value, color) {
   if (value === 13) {
     console.log("this is a +4 card");
     wildColor = selectedColor;
-    
   }
-  
 
   //Wild Card
   if (value === 14) {
     console.log("this is a Wild Card");
     wildColor = selectedColor;
-    
   }
-  
 
   let URL =
     "https://nowaunoweb.azurewebsites.net/api/Game/PlayCard/" +
@@ -268,10 +295,11 @@ async function tryToPlayCard(value, color) {
 
     removeCardFromHand(currentPlayer, value, color);
     await updatePlayerCards();
+    await winnerAlert();
 
     currentPlayer = playCardResponse.Player;
 
-    await showIfActivePlayer();
+    //await showIfActivePlayer();
 
     await updateTopCard();
     await updatePlayerPoints();
@@ -374,32 +402,22 @@ async function drawPile(gameID) {
     if (response.ok) {
       drawCardResult = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
 
-      
+      // await showIfActivePlayer();
       currentPlayer = drawCardResult.Player;
-
-      await showIfActivePlayer();
 
       if (currentPlayer == result.Players[0].Player) {
         await addCard(0, "player_ul1");
-        
       } else if (currentPlayer == result.Players[1].Player) {
         await addCard(1, "player_ul2");
-        
       } else if (currentPlayer == result.Players[2].Player) {
         await addCard(2, "player_ul3");
-       
       } else if (currentPlayer == result.Players[3].Player) {
         await addCard(3, "player_ul4");
-   
       }
-      
-      
 
       currentPlayer = drawCardResult.NextPlayer;
- 
-      
+      await showIfActivePlayer();
       await updatePlayerPoints();
-
     } else {
       alert("HTTP-Error: " + response.status);
     }
@@ -527,12 +545,52 @@ async function colorModal() {
     // Close the color selection modal
     colorSelectionModal.hide();
     tryToPlayCard(chosenCardValue, chosenCardColor);
+    //showChosenColor(selectedColor);
   }
 
   // Add the event listener for color selection
   document
     .getElementById("confirmColorSelection")
     .addEventListener("click", handleColorSelection);
+}
+
+//-------------- Show the Selected Color  Modal --------------------//
+
+async function showChosenColor(color) {
+  const modalBody = document.getElementById("showSelectedColorModalBody");
+  showSelectedColorModal.show();
+  let chosenColorText;
+
+  // Determine the text to display based on the chosen color
+  switch (color) {
+    case "Red":
+      chosenColorText = "Red";
+      break;
+    case "Blue":
+      chosenColorText = "Blue";
+      break;
+    case "Green":
+      chosenColorText = "Green";
+      break;
+    case "Yellow":
+      chosenColorText = "Yellow";
+      break;
+    default:
+      chosenColorText = "Unknown Color";
+  }
+
+  // Set the modal body content to display the chosen color
+  modalBody.textContent = `${chosenColorText}`;
+
+  // Show the modal window with the chosen color
+  const chosenColorModal = new bootstrap.Modal(
+    document.getElementById("showSelectedColorModal")
+  );
+  showSelectedColorModal.show();
+
+  document
+    .getElementById("closeMe")
+    .addEventListener("click", showSelectedColorModal.hide());
 }
 
 function getCurrentPlayerID() {
@@ -557,59 +615,59 @@ async function hidePlayersCards(playerId) {
 
 async function showPlayersCards(playerId) {
   //let i = 0;
- const response = await getCards(gameID, currentPlayer);
+  const response = await getCards(gameID, currentPlayer);
   //console.log("the get-Response", response);
-  for(let i=1; i<=4; i++){
+  for (let i = 1; i <= 4; i++) {
+    const playerHandElement = document.getElementById(
+      `player_ul${playerId + 1}`
+    );
 
-  const playerHandElement = document.getElementById(`player_ul${playerId + 1}`);
+    if (playerHandElement && response) {
+      // && response.Cards
+      if (playerHandElement) {
+        const cardImages = playerHandElement.querySelectorAll("li img");
+        cardImages.forEach((card, index) => {
+          //card.remove();
 
-  if (playerHandElement && response) {
-    // && response.Cards
-  if (playerHandElement) {
-    const cardImages = playerHandElement.querySelectorAll("li img");
-    cardImages.forEach((card, index) => {
-      //card.remove();
+          // const cardData = response.Cards[index];
+          //card.src = `${baseUrl}${cardData.Color}${cardData.Value}.png`; // Set the correct card image source
 
-     // const cardData = response.Cards[index];
-      //card.src = `${baseUrl}${cardData.Color}${cardData.Value}.png`; // Set the correct card image source
+          while (i < result.Players[playerId].Cards.length) {
+            let cardColor = result.Players[playerId].Cards[i].Color;
+            let cardNumber = result.Players[playerId].Cards[i].Value;
+            let card = cardColor + cardNumber;
+            //let cardUrl = `${baseUrl}${card}.png`;
+            //img.src = cardUrl;
 
-      while (i < result.Players[playerId].Cards.length) {
-        
-        let cardColor = result.Players[playerId].Cards[i].Color;
-        let cardNumber = result.Players[playerId].Cards[i].Value;
-        let card = cardColor + cardNumber;
-        //let cardUrl = `${baseUrl}${card}.png`;
-        //img.src = cardUrl;
-    
-        //img.addEventListener("click", clickCard, false);
-        //img.cardColor = cardColor;
-        //img.cardValue = cardNumber;
-    
-        //const li = document.createElement("li");
-       // li.appendChild(img);
-       // playerlist.appendChild(li);
-        card.src = `${baseUrl}${cardColor}${cardNumber}.png`;
-        i++;
-        // const cardData = response.Cards[index];
-      }
-      //for (let j = 0; j < card.length; j++) {
-       /* const cardColor = card.Color;
+            //img.addEventListener("click", clickCard, false);
+            //img.cardColor = cardColor;
+            //img.cardValue = cardNumber;
+
+            //const li = document.createElement("li");
+            // li.appendChild(img);
+            // playerlist.appendChild(li);
+            card.src = `${baseUrl}${cardColor}${cardNumber}.png`;
+            i++;
+            // const cardData = response.Cards[index];
+          }
+
+          //for (let j = 0; j < card.length; j++) {
+          /* const cardColor = card.Color;
         const cardNumber = card.Value;
         const card = cardColor + cardNumber;
         const cardUrl = `${baseUrl}${card}.png`;*/
-      //}
-      //card.classList.remove("hidden");
-      //card.addEventListener("click", function(){
-        //tryToPlayCard(cardData.Value, cardData.Color);
-     // })
-    });
+          //}
+          //card.classList.remove("hidden");
+          //card.addEventListener("click", function(){
+          //tryToPlayCard(cardData.Value, cardData.Color);
+          // })
+        });
+      }
+    }
+    // await updatePlayerCards();
+    //  i++;
   }
 }
- // await updatePlayerCards();
-  //  i++;
-  }
-}
-
 
 async function showIfActivePlayer() {
   console.log(
@@ -621,7 +679,7 @@ async function showIfActivePlayer() {
 
   let activePlayer = getCurrentPlayerID();
 
-  for (let i = 0 ; i <= 3; i++) {
+  for (let i = 0; i <= 3; i++) {
     if (i === activePlayer) {
       await showPlayersCards(i);
     } else {
@@ -637,9 +695,42 @@ async function winnerAlert() {
     // const playerName = document.getElementById(`playerName${i}`).value;
     //}
 
-    if (result.Players[i].Cards.length === 0) {
-      alert("The winner is the player: " + result.Players[i].Player);
-      break;
+    if (playerPoints[i] === 0) {
+      alert("The winner is the player: " + playerNames[i]);
+      return;
+      //break;
     }
   }
 }
+
+async function shoutUNO() {
+
+  for (let i = 0; i <= 3; i++) {
+
+    const ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
+    const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
+    
+    if (lis.length === 1) {
+      alert("You did not say UNO bitch!");
+      await addCard(i, `player_ul${i}`);
+      await addCard(i, `player_ul${i}`);
+    } else {
+      return;
+    }
+  }
+  
+      // Show UNO button for the player with one card left
+      // const unoButton = document.getElementById(`unoButtonPlayer${i + 1}`);
+      //unoButton.style.display = "block";
+
+      // Handle UNO button click event
+      //unoButton.addEventListener("click", async () => {
+      // Play UNO sound (assuming you have an audio element with id "unoSound")
+      //const unoSound = document.getElementById("unoSound");
+      // unoSound.play();
+      //});
+      // Draw two cards for the player (modify as needed)
+      // Hide UNO button after clicking
+      // unoButton.style.display = "none";
+    }
+  
