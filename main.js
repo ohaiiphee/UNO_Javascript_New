@@ -1,12 +1,15 @@
 let result = Object();
-let result2 = Object();
-let result3 = Object();
-let result4 = Object();
-
-
+let topCardResult = Object();
+let drawCardResult = Object();
+let getCardsResult = Object();
 
 let selectedColor;
 let colorSelectionPromiseResolver;
+let chosenCardValue;
+let chosenCardColor;
+let colorSelectionModal = new bootstrap.Modal(
+  document.getElementById("colorSelectionModal")
+);
 
 const baseUrl = "uno_karten_originaldesign/";
 
@@ -14,66 +17,47 @@ let gameID = Object();
 let currentPlayer = Object();
 let playerPoints = [];
 let playCardResponse = Object();
-let playerName = Object();
+let playerName;
 
 const playerNames = [];
 
-let currentPlayerIndex = playerNames.indexOf(currentPlayer);
-
-//Button to start a new Game
+//-------------- Button to start a new Game --------------------//
 let newGameButton = document.getElementById("newGameButton");
 newGameButton.addEventListener("click", async function () {
   await startNewGame();
 });
 
-// Modal Dialog for Game Rules
+//-------------- Modal Dialog for Game Rules --------------------//
 let gameRules = new bootstrap.Modal(document.getElementById("gameRulesModal"));
 let gameRulesButton = document.getElementById("gameRulesButton");
+
 gameRulesButton.onclick = function () {
   gameRules.show();
 };
 
-// Modalen Dialog öffnen um Namen einzugeben
+//-------------- Modalen Dialog for Names --------------------//
 let myModal = new bootstrap.Modal(document.getElementById("playerNames"));
 myModal.show();
 
-// formular submit abfangen
 document
   .getElementById("playerNamesForm")
   .addEventListener("submit", async function (evt) {
-    console.log("submit works");
-    // Formular absenden verhindern
     evt.preventDefault();
 
-    //create the player divs
-    playerCreation();
-
-    //start the game
+    playerCreation(); //create player divs
     await startNewGame();
-    await topCard(gameID);
-    await drawCard(gameID);
-
-    //await markCurrentPlayer(currentPlayer, "player1");
-
-    //await hidePlayersCards(1);
-
-    //await showPlayersCards(0);
-
-    await getCards(gameID, currentPlayer);
-
-    //await hidePlayersCards(0);
 
     await showIfActivePlayer();
 
-    //await showIfActivePlayer(0);
-    //await showIfActivePlayer(1);
-    //await showIfActivePlayer(2);
-    //await showIfActivePlayer(3);
+    await drawPile(gameID);
+    await showIfActivePlayer();
+    
+    //await getCards(gameID, currentPlayer);
 
-    //await showPlayersCards(currentPlayer);
-    //await showIfActivePlayer(1);
+    await winnerAlert();
   });
 
+//-------------- Create Players --------------------//
 function playerCreation() {
   let error = 0;
 
@@ -110,16 +94,13 @@ function playerCreation() {
     document.getElementById(`player${i}`).appendChild(playerUl);
   }
 
+  //if everything works as intended, no erros --> close modal
   if (error == 0) {
-    console.log("divElementCreation works");
     myModal.hide();
   }
 }
 
 async function startNewGame() {
-  // hier starten wir gleich den request
-  // warten auf das promise (alternativ fetch, then notation)
-
   const response = await fetch(
     "https://nowaunoweb.azurewebsites.net/api/game/start",
     {
@@ -131,33 +112,25 @@ async function startNewGame() {
     }
   );
 
-  // dieser code wird erst ausgeführt wenn fetch fertig ist
   if (response.ok) {
-    // wenn http-status zwischen 200 und 299 liegt
-    // wir lesen den response body
-    result = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-    gameID = result.Id; // Get SpielId from the API response
+    result = await response.json();
+    gameID = result.Id;
     currentPlayer = result.NextPlayer;
-    console.log("current player: " + currentPlayer);
     playerPoints = result.Players.map((player) => player.Score);
-    console.log("New game started with GameID: " + gameID);
-    //alert("SpielId", gameID);
-    console.log(result);
 
-    for (let i = 0; i <= 3; i++) {
-      const pointsSpan = document.createElement("span");
-      pointsSpan.id = `playerPoints${i + 1}`;
-      pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
-      document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
-    }
+    await updatePlayerPoints();
 
-    console.log(playerPoints);
+    //distribute cards inside the startGame() so that the players get new cards
+    //every time we start a new game
 
-    //distribute cards inside the startGame() so that the players get new cards every time we start a new game
     distributeCards(0, "player_ul1");
     distributeCards(1, "player_ul2");
     distributeCards(2, "player_ul3");
     distributeCards(3, "player_ul4");
+
+    //topCard is called here so that it also updates everytime we press new game
+    await topCard(gameID);
+    //await showIfActivePlayer();
 
     return gameID;
   } else {
@@ -165,11 +138,12 @@ async function startNewGame() {
   }
 }
 
-
-function distributeCards(playerId, htmlid) {
+//-------------- Distribute Cards --------------------//
+async function distributeCards(playerId, htmlid) {
   let playerlist = document.getElementById(htmlid);
   let i = 0;
 
+  //if there are currently cards already there (ex: if we clicked "New Game"), delete them first
   while (playerlist.firstChild) {
     playerlist.removeChild(playerlist.firstChild);
   }
@@ -186,23 +160,19 @@ function distributeCards(playerId, htmlid) {
     img.addEventListener("click", clickCard, false);
     img.cardColor = cardColor;
     img.cardValue = cardNumber;
-    //console.log(result.Players[i].Cards[i]);
 
-    //Karten zur Liste hinzufügen
     const li = document.createElement("li");
-    //console.log("li: ", li);
-
     li.appendChild(img);
     playerlist.appendChild(li);
     i++;
   }
 }
 
+//-------------- Create Top Card --------------------//
 async function topCard(gameID) {
-  //if topcard img already exists, delete it to replace with new one --TEST IF NEEDED
-
   const topCardDiv = document.createElement("Div");
 
+  //if topcard img already exists, delete it to replace with new one
   while (topCardDiv.firstChild) {
     topCardDiv.removeChild(topCardDiv.firstChild);
   }
@@ -212,13 +182,11 @@ async function topCard(gameID) {
   let img = document.createElement("img");
   let cardColor = result.TopCard.Color;
   let cardNumber = result.TopCard.Value;
-  //let cardNumber = result2.TopCard[gameID].Value;
   let card = cardColor + cardNumber;
   let cardUrl = `${baseUrl}${card}.png`;
   img.src = cardUrl;
 
   const li = document.createElement("li");
-  //console.log("li: ", li);
   li.appendChild(img);
 
   topCardDiv.appendChild(li);
@@ -228,50 +196,52 @@ async function topCard(gameID) {
     `https://nowaunoweb.azurewebsites.net/api/game/topCard/${gameID}`,
     {
       method: "GET",
-      //body: JSON.stringify(playerNames),
       headers: {
         "Content-type": "application/json; charset=UTF-8",
       },
     }
   );
 
-  // dieser code wird erst ausgeführt wenn fetch fertig ist
   if (response.ok) {
-    // wenn http-status zwischen 200 und 299 liegt
-    // wir lesen den response body
-    result2 = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-    console.log("The Topcard is: "), console.log(result2);
-    //alert(JSON.stringify(result2));
+    topCardResult = await response.json();
+    console.log("The Topcard is: "), console.log(topCardResult);
   } else {
     alert("HTTP-Error: " + response.status);
   }
 
-  result2.topCard;
+  topCardResult.topCard;
 }
 
-//
+//-------------- ClickCard Function for Every Handcard --------------------//
 async function clickCard(ev) {
-  console.log(ev);
-  tryToPlayCard(ev.target.cardValue, ev.target.cardColor);
+  chosenCardValue = ev.target.cardValue;
+  chosenCardColor = ev.target.cardColor;
+  if (ev.target.cardValue === 13 || ev.target.cardValue === 14) {
+    colorModal();
+  } else {
+    tryToPlayCard(ev.target.cardValue, ev.target.cardColor);
+  }
 }
 
+//-------------- Play a Card --------------------//
 async function tryToPlayCard(value, color) {
   let wildColor = "";
   let gameID = result.Id;
+  //+4 Card --> can only be played if player has no valid color/number cards
+  if (value === 13) {
+    console.log("this is a +4 card");
+    wildColor = selectedColor;
+    
+  }
+  
 
-//+4 Card --> can only be played if player has no valid color/number cards
-if (value === 13) {
-  console.log("this is a +4 card");
-  await colorModal();
-  wildColor = selectedColor;
-}
-
-//Wild Card
-if (value === 14) {
-  console.log("this is a Wild Card");
-  await colorModal();
-  wildColor = selectedColor;
-}
+  //Wild Card
+  if (value === 14) {
+    console.log("this is a Wild Card");
+    wildColor = selectedColor;
+    
+  }
+  
 
   let URL =
     "https://nowaunoweb.azurewebsites.net/api/Game/PlayCard/" +
@@ -285,31 +255,34 @@ if (value === 14) {
 
   const response = await fetch(URL, {
     method: "PUT",
-    //body: JSON.stringify(playerNames),
     headers: {
       "Content-type": "application/json; charset=UTF-8",
     },
   });
 
   playCardResponse = await response.json();
-  // dieser code wird erst ausgeführt wenn fetch fertig ist
   if (playCardResponse.error) {
     alert("nope can't play that one");
   } else {
-    // alternativ response.text wenn nicht json gewünscht ist
-    result.Player = playCardResponse.Player;
-    result.NextPlayer = playCardResponse.Player;
+    //result.Player = playCardResponse.Player;
+
     removeCardFromHand(currentPlayer, value, color);
     await updatePlayerCards();
 
-
     currentPlayer = playCardResponse.Player;
-    console.log("The current player is:" + currentPlayer);
+
+    await showIfActivePlayer();
+
     await updateTopCard();
     await updatePlayerPoints();
+
+    result.NextPlayer = playCardResponse.Player;
+    await winnerAlert();
   }
+  await showIfActivePlayer();
 }
 
+//-------------- Remove Card from Player Hand --------------------//
 async function removeCardFromHand(currentPlayer, value, color) {
   const playerHandElement = document.getElementById(`${currentPlayer}`);
 
@@ -321,27 +294,23 @@ async function removeCardFromHand(currentPlayer, value, color) {
         cardImages[i].cardValue === value &&
         cardImages[i].cardColor === color
       ) {
-        // Remove the card image from the player's hand
         cardImages[i].parentNode.remove();
-        console.log(
-          `Removed card with value ${value} and color ${color} from ${currentPlayer}'s hand.`
-        );
-        return; // Exit the loop once the card is found and removed.
+        return; // Exit the loop once the card is found and removed
       }
     }
 
-    console.log(
-      `Card with value ${value} and color ${color} not found in ${currentPlayer}'s hand.`
-    );
+    //console.log(`Card with value ${value} and color ${color} not found in ${currentPlayer}'s hand.`);
   } else {
     console.log(`Player hand for ${currentPlayer} not found.`);
   }
 }
 
+//-------------- Helper Function for URLs --------------------//
 async function buildSrcString(color, number) {
   return `${baseUrl}${color + number}.png`;
 }
 
+//-------------- Update TopCard --------------------//
 async function updateTopCard() {
   const response = await fetch(
     `https://nowaunoweb.azurewebsites.net/api/game/topCard/${gameID}`,
@@ -357,7 +326,7 @@ async function updateTopCard() {
     const updatedTopCard = await response.json();
     const topCardDiv = document.querySelector(".topcard-container");
 
-    // Clear the existing top card image
+    // Clear the existing top card image (otherwise we'll have 2 or more topCards :D)
     while (topCardDiv.firstChild) {
       topCardDiv.removeChild(topCardDiv.firstChild);
     }
@@ -379,13 +348,12 @@ async function updateTopCard() {
   }
 }
 
-async function drawCard(gameID) {
+//-------------- Draw Pile--------------------//
+async function drawPile(gameID) {
   const drawCardDiv = document.createElement("Div");
   drawCardDiv.className = "drawcard-container";
 
   let img = document.createElement("img");
-  //let cardUrl = `${baseUrl}${back0}.png`;
-
   img.src = "uno_karten_originaldesign/back0.png";
 
   const li = document.createElement("li");
@@ -403,48 +371,49 @@ async function drawCard(gameID) {
         },
       }
     );
-    // dieser code wird erst ausgeführt wenn fetch fertig ist
     if (response.ok) {
-      // wenn http-status zwischen 200 und 299 liegt
-      // wir lesen den response body
-      result3 = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
-      console.log("The drawcard is: ", result3);
-      //alert(JSON.stringify(result3));
+      drawCardResult = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
 
-      currentPlayer = result3.Player;
+      
+      currentPlayer = drawCardResult.Player;
 
-      await updatePlayerPoints();
+      await showIfActivePlayer();
 
       if (currentPlayer == result.Players[0].Player) {
         await addCard(0, "player_ul1");
+        
       } else if (currentPlayer == result.Players[1].Player) {
         await addCard(1, "player_ul2");
+        
       } else if (currentPlayer == result.Players[2].Player) {
         await addCard(2, "player_ul3");
+       
       } else if (currentPlayer == result.Players[3].Player) {
         await addCard(3, "player_ul4");
+   
       }
+      
+      
 
-      currentPlayer = result3.NextPlayer;
+      currentPlayer = drawCardResult.NextPlayer;
+ 
+      
       await updatePlayerPoints();
 
-      //addCard(currentPlayer, `player_ul${currentPlayer.Index + 1}`);
-      //ChatGBT-version
-      //return result3;
     } else {
       alert("HTTP-Error: " + response.status);
     }
   });
 }
 
+//-------------- Add a Card To Player's Hand --------------------//
 async function addCard(playerId, htmlid) {
   let playerlist = document.getElementById(htmlid);
   let i = 0;
-  //let playerDrawCard = result3.Player;
 
   let img = document.createElement("img");
-  let cardColor = result3.Card.Color;
-  let cardNumber = result3.Card.Value;
+  let cardColor = drawCardResult.Card.Color;
+  let cardNumber = drawCardResult.Card.Value;
   card = cardColor + cardNumber;
   cardUrl = `${baseUrl}${card}.png`;
   img.className = "card";
@@ -453,45 +422,33 @@ async function addCard(playerId, htmlid) {
   img.src = cardUrl;
 
   const li = document.createElement("li");
-  console.log("li: ", li);
-
   li.appendChild(img);
-
   playerlist.appendChild(li);
   img.addEventListener("click", clickCard, false);
+
   await updatePlayerCards();
 }
 
-
+//-------------- GetCards Function --------------------//
 async function getCards(gameID, playerName) {
   let URL = `https://nowaunoweb.azurewebsites.net/api/game/getCards/${gameID}?playerName=${playerName}`;
 
   const response = await fetch(URL, {
     method: "GET",
-    //body: JSON.stringify(playerNames),
     headers: {
       "Content-type": "application/json; charset=UTF-8",
     },
   });
-  // dieser code wird erst ausgeführt wenn fetch fertig ist
-  if (response.ok) {
-    // wenn http-status zwischen 200 und 299 liegt
-    // wir lesen den response body
-    result4 = await response.json(); // alternativ response .text wenn nicht json gewünscht ist
-    console.log(
-      "The current Player is:",
-      result4.Player,
-      "and has the following cards :",
-      result4.Cards
-    );
-    currentPlayerIndex = playerNames.indexOf(playerName);
 
+  if (response.ok) {
+    getCardsResult = await response.json();
+    const currentPlayerIndex = playerNames.indexOf(playerName);
     const playerHandElement = document.getElementById(
       `player_ul${currentPlayerIndex + 1}`
     );
 
     if (currentPlayerIndex !== -1) {
-      playerPoints[currentPlayerIndex] = result4.Score;
+      playerPoints[currentPlayerIndex] = getCardsResult.Score;
     }
 
     if (playerHandElement) {
@@ -501,7 +458,7 @@ async function getCards(gameID, playerName) {
       }
 
       // Get the current cards for the player and update their hand
-      const playerCards = result4.Cards; // Replace with the correct property in your API response
+      const playerCards = getCardsResult.Cards;
       for (let j = 0; j < playerCards.length; j++) {
         const cardColor = playerCards[j].Color;
         const cardNumber = playerCards[j].Value;
@@ -518,23 +475,69 @@ async function getCards(gameID, playerName) {
         const li = document.createElement("li");
         li.appendChild(img);
         playerHandElement.appendChild(li);
-        //alert(JSON.stringify(result3));
-        //return currentPlayer;
       }
     }
 
-    currentPlayer = result4.Player;
+    currentPlayer = getCardsResult.Player;
     updatePlayerPoints();
   } else {
     alert("HTTP-Error: " + response.status);
   }
-  return result4;
+  return getCardsResult;
 }
 
+//-------------- Update Player's Points --------------------//
+async function updatePlayerPoints() {
+  for (let i = 0; i <= 3; i++) {
+    const pointsSpanId = `playerPoints${i + 1}`;
+    const existingPointsSpan = document.getElementById(pointsSpanId);
 
-function getCurrentPlayerID(){
-  for(let i=0; i<=3;i++){
-    if(result.NextPlayer === playerNames[i]){
+    // Check if the points span already exists and remove it
+    if (existingPointsSpan) {
+      existingPointsSpan.remove();
+    }
+
+    const pointsSpan = document.createElement("span");
+    pointsSpan.id = pointsSpanId;
+    pointsSpan.textContent = `Points: ${playerPoints[i]}`;
+    document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
+  }
+}
+
+//-------------- Helper Function to Update Player Cards --------------------//
+async function updatePlayerCards() {
+  playerNames.forEach((name) => {
+    getCards(gameID, name);
+  });
+}
+
+//-------------- Show the Color Selection Modal --------------------//
+async function colorModal() {
+  colorSelectionModal.show();
+
+  // Create a function to handle color selection and remove the event listener
+  function handleColorSelection() {
+    selectedColor = document.querySelector('input[name="color"]:checked').value;
+
+    // Remove the event listener to prevent it from being called multiple times
+    document
+      .getElementById("confirmColorSelection")
+      .removeEventListener("click", handleColorSelection);
+
+    // Close the color selection modal
+    colorSelectionModal.hide();
+    tryToPlayCard(chosenCardValue, chosenCardColor);
+  }
+
+  // Add the event listener for color selection
+  document
+    .getElementById("confirmColorSelection")
+    .addEventListener("click", handleColorSelection);
+}
+
+function getCurrentPlayerID() {
+  for (let i = 0; i <= 3; i++) {
+    if (result.NextPlayer === playerNames[i]) {
       return i;
     }
   }
@@ -554,29 +557,59 @@ async function hidePlayersCards(playerId) {
 
 async function showPlayersCards(playerId) {
   //let i = 0;
-  const response = await getCards(gameID, currentPlayer);
-  console.log("the get-Response", response);
+ const response = await getCards(gameID, currentPlayer);
+  //console.log("the get-Response", response);
+  for(let i=1; i<=4; i++){
 
   const playerHandElement = document.getElementById(`player_ul${playerId + 1}`);
 
-  //while (i < result.Players[playerId].Cards.length) {
-  //const playerName = document.getElementById(`playerName${i}`).value;
-
-  //if (playerHandElement && response && response.Cards) {
+  if (playerHandElement && response) {
+    // && response.Cards
   if (playerHandElement) {
     const cardImages = playerHandElement.querySelectorAll("li img");
     cardImages.forEach((card, index) => {
-      card.remove();
-      
-      //const cardData = response.Cards[index];
+      //card.remove();
+
+     // const cardData = response.Cards[index];
       //card.src = `${baseUrl}${cardData.Color}${cardData.Value}.png`; // Set the correct card image source
+
+      while (i < result.Players[playerId].Cards.length) {
+        
+        let cardColor = result.Players[playerId].Cards[i].Color;
+        let cardNumber = result.Players[playerId].Cards[i].Value;
+        let card = cardColor + cardNumber;
+        //let cardUrl = `${baseUrl}${card}.png`;
+        //img.src = cardUrl;
+    
+        //img.addEventListener("click", clickCard, false);
+        //img.cardColor = cardColor;
+        //img.cardValue = cardNumber;
+    
+        //const li = document.createElement("li");
+       // li.appendChild(img);
+       // playerlist.appendChild(li);
+        card.src = `${baseUrl}${cardColor}${cardNumber}.png`;
+        i++;
+        // const cardData = response.Cards[index];
+      }
+      //for (let j = 0; j < card.length; j++) {
+       /* const cardColor = card.Color;
+        const cardNumber = card.Value;
+        const card = cardColor + cardNumber;
+        const cardUrl = `${baseUrl}${card}.png`;*/
+      //}
       //card.classList.remove("hidden");
+      //card.addEventListener("click", function(){
+        //tryToPlayCard(cardData.Value, cardData.Color);
+     // })
     });
   }
- await updatePlayerCards();
-  //  i++;
-  //}
 }
+ // await updatePlayerCards();
+  //  i++;
+  }
+}
+
 
 async function showIfActivePlayer() {
   console.log(
@@ -586,9 +619,9 @@ async function showIfActivePlayer() {
     playerNames.indexOf(currentPlayer)
   );
 
-  const activePlayer = getCurrentPlayerID();
+  let activePlayer = getCurrentPlayerID();
 
-  for (let i = 0; i <= 3; i++) {
+  for (let i = 0 ; i <= 3; i++) {
     if (i === activePlayer) {
       await showPlayersCards(i);
     } else {
@@ -597,131 +630,16 @@ async function showIfActivePlayer() {
   }
 }
 
-async function updatePlayerPoints() {
+async function winnerAlert() {
   for (let i = 0; i <= 3; i++) {
-    const pointsSpanId = `playerPoints${i + 1}`;
-    const existingPointsSpan = document.getElementById(pointsSpanId);
+    // const playerHandElement = document.getElementById(`player_ul${i}`);
+    // console.log(playerHandElement.childNodes.length);
+    // const playerName = document.getElementById(`playerName${i}`).value;
+    //}
 
-    // Check if the points span already exists and remove it
-    if (existingPointsSpan) {
-      existingPointsSpan.remove();
-    }
-
-    const pointsSpan = document.createElement("span");
-    pointsSpan.id = pointsSpanId;
-    pointsSpan.textContent = `Points: ${playerPoints[i]}`; // Initialize points based on the API response
-    document.getElementById(`player${i + 1}`).appendChild(pointsSpan);
-  }
-}
-
-async function updatePlayerCards() {
-  playerNames.forEach((name) => {
-    getCards(gameID, name);
-  });
-}
-
-
-//-------------- Show the Color Selection Modal --------------------//
-async function colorModal() {
-  const colorSelectionPromise = new Promise((resolve) => {
-      colorSelectionPromiseResolver = resolve;
-  });
-
-  let colorSelectionModal = new bootstrap.Modal(document.getElementById('colorSelectionModal'));
-  colorSelectionModal.show();
-  return colorSelectionPromise;
-}
-  document.getElementById('confirmColorSelection').addEventListener('click', async function () {
-  selectedColor = document.querySelector('input[name="color"]:checked').value;
-
-  console.log("The selected color is: " + selectedColor);
-
-  
-  // Close the color selection modal
-  colorSelectionModal.hide();
-});
-
-/*
-  async function markCurrentPlayer(currentPlayer, playerId) {
-
-   
-    // Remove currentPlayer class from all players
-    const players = document.querySelectorAll('#player1');
-    players.forEach(player => {
-      player.classList.add('currentPlayer');
-    });
- 
-    // Add currentPlayer class to the active player
-    const activePlayer = document.getElementById(`player${playerId}`);
-    if (activePlayer) {
-      activePlayer.classList.add('currentPlayer');
+    if (result.Players[i].Cards.length === 0) {
+      alert("The winner is the player: " + result.Players[i].Player);
+      break;
     }
   }
-
-
-
-
-//The following method is supposed to highlight the active player
-async function markCurrentPlayer(currentPlayer) {
- // let display = document.getElementById('player2');
-//display.textContent = currentPlayer;
-  
-  /*
-  const activePlayer = document.getElementById(`${currentPlayer}`);
-  if(activePlayer){
-
-    const players = document.getElementById(`player${playerId}`);
-    for(let i=0; i<=4; i++ ){
-
-    players.forEach(player => {
-      player.classList.add('currentPlayer');
-     
-    }
-
-    )
-
-  }}
 }
-
-
-  // Remove currentPlayer class from all players
-  //const players = document.querySelectorAll('.image-container');
-  //players.forEach(player => {
-   // player.classList.add('currentPlayer');
-  //});
-  //const players1 = document.querySelectorAll('#player1');
-  const players1 = document.querySelectorAll('#player1');
-  const players2 = document.querySelectorAll('#player2');
-  const player1 =result.Players[0].Player;
-  const player2 =result.Players[2].Player;
-
-
-  //`player${i}`;
-  if(player1 ==currentPlayer){
-  players1.forEach(player => {
-    player.classList.add('currentPlayer');
-   
-  }
-  );
-//player.classList.remove('currentPlayer');
-}else if(player2 ==currentPlayer){
-  players2.forEach(player => {
-    player.classList.add('currentPlayer');
-   
-  });
-
-} 
-
-}
-
-const playerHandElement = document.getElementById(`${currentPlayer}`);
-
-  if (playerHandElement) {
-    const cardImages = playerHandElement.querySelectorAll("li img");
-
-
-  // Add currentPlayer class to the current player's container
-  const currentPlayerContainer = document.getElementById(`player${playerId}`);
-  currentPlayerContainer.classList.add('currentPlayer');
-}
-*/
