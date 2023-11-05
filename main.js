@@ -3,6 +3,10 @@ let topCardResult = Object();
 let drawCardResult = Object();
 let getCardsResult = Object();
 
+//Shout UNO when only one card left
+const unoSound = new Audio("WhatsApp Audio 2023-11-04 um 14.39.10_30ef3f1e.mp3");
+const winnerSound = new Audio("03 Stronger.m4a");
+
 let selectedColor;
 let colorSelectionPromiseResolver;
 let chosenCardValue;
@@ -24,8 +28,28 @@ const playerNames = [];
 let newGameButton = document.getElementById("newGameButton");
 newGameButton.addEventListener("click", async function () {
     await startNewGame();
-})
+});
 
+let unoButton = document.getElementById("uno-button");
+
+unoButton.addEventListener("click", async function () {
+    //handleUnoClick(index);
+    for (let i = 0; i <= 3; i++) {
+        const ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
+        //const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
+        //console.log(lis);
+        console.log(ul);
+
+        if (lis.length > 1) {
+            alert("You have more than one card, you can´t say uno");
+            await addCard(i, `player_ul${i}`);
+            await addCard(i, `player_ul${i}`);
+        } else if (lis.length === 1) {
+            await shoutUNO();
+            unoSound.play();
+        }
+    }
+});
 
 //-------------- Modal Dialog for Game Rules --------------------//
 let gameRules = new bootstrap.Modal(document.getElementById('gameRulesModal'));
@@ -33,7 +57,7 @@ let gameRulesButton = document.getElementById("gameRulesButton");
 
 gameRulesButton.onclick = function () {
     gameRules.show();
-}
+};
 
 
 //-------------- Modalen Dialog for Names --------------------//
@@ -47,6 +71,8 @@ document.getElementById('playerNamesForm').addEventListener('submit', async func
 
     await startNewGame();
     await drawPile(gameID);
+    await showIfActivePlayer();
+    winnerAlert();
 
 });
 
@@ -253,16 +279,17 @@ async function tryToPlayCard(value, color) {
     if (playCardResponse.error) {
         alert("nope can't play that one");
     } else {
-
-
-
         removeCardFromHand(currentPlayer, value, color);
         await updatePlayerCards();
 
         currentPlayer = playCardResponse.Player;
+
         await updateTopCard();
         await updatePlayerPoints();
+
+        winnerAlert();
     }
+    await showIfActivePlayer();
 }
 
 
@@ -354,8 +381,9 @@ async function drawPile(gameID) {
                 },
             }
         );
+
         if (response.ok) {
-            drawCardResult = await response.json(); // alternativ response.text wenn nicht json gewünscht ist
+            drawCardResult = await response.json();
             currentPlayer = drawCardResult.Player;
 
             if (currentPlayer == result.Players[0].Player) {
@@ -370,6 +398,7 @@ async function drawPile(gameID) {
 
             currentPlayer = drawCardResult.NextPlayer;
             await updatePlayerPoints();
+            await showIfActivePlayer();
         } else {
             alert("HTTP-Error: " + response.status);
         }
@@ -432,6 +461,7 @@ async function getCards(gameID, playerName) {
 
             // Get the current cards for the player and update their hand
             const playerCards = getCardsResult.Cards;
+
             for (let j = 0; j < playerCards.length; j++) {
                 const cardColor = playerCards[j].Color;
                 const cardNumber = playerCards[j].Value;
@@ -453,6 +483,7 @@ async function getCards(gameID, playerName) {
 
         currentPlayer = getCardsResult.Player;
         updatePlayerPoints();
+
     } else {
         alert("HTTP-Error: " + response.status);
     }
@@ -481,8 +512,8 @@ async function updatePlayerPoints() {
 
 //-------------- Helper Function to Update Player Cards --------------------//
 async function updatePlayerCards() {
-    playerNames.forEach(name => {
-        getCards(gameID, name);
+    playerNames.forEach(async (name) => {
+        await getCards(gameID, name);
     });
 }
 
@@ -505,6 +536,172 @@ async function colorModal() {
 
     // Add the event listener for color selection
     document.getElementById('confirmColorSelection').addEventListener('click', handleColorSelection);
+}
+
+//-------------- New Methods from Aurelie --------------------//
+function getCurrentPlayerID() {
+    for (let i = 0; i <= 3; i++) {
+        if (result.NextPlayer === playerNames[i]) {
+            return i;
+        }
+    }
+}
+
+async function hidePlayersCards(playerId) {
+    const playerHandElement = document.getElementById(`player_ul${playerId + 1}`);
+    if (playerHandElement) {
+        const cardImages = playerHandElement.querySelectorAll("li img");
+        cardImages.forEach((card) => {
+            card.src = "uno_karten_originaldesign/back0.png";
+            //card.remove(); // Set the back card image source
+            //card.classList.remove("hidden");
+        });
+    }
+}
+
+async function showPlayersCards(playerId) {
+    //let i = 0;
+    const response = await getCards(gameID, currentPlayer);
+    //console.log("the get-Response", response);
+    for (let i = 1; i <= 4; i++) {
+        const playerHandElement = document.getElementById(
+            `player_ul${playerId + 1}`
+        );
+
+        if (playerHandElement && response) {
+            // && response.Cards
+            if (playerHandElement) {
+                const cardImages = playerHandElement.querySelectorAll("li img");
+                cardImages.forEach((card, index) => {
+                    //card.remove();
+
+                    // const cardData = response.Cards[index];
+                    //card.src = `${baseUrl}${cardData.Color}${cardData.Value}.png`; // Set the correct card image source
+
+                    while (i < result.Players[playerId].Cards.length) {
+                        let cardColor = result.Players[playerId].Cards[i].Color;
+                        let cardNumber = result.Players[playerId].Cards[i].Value;
+                        let card = cardColor + cardNumber;
+                        //let cardUrl = `${baseUrl}${card}.png`;
+                        //img.src = cardUrl;
+
+                        //img.addEventListener("click", clickCard, false);
+                        //img.cardColor = cardColor;
+                        //img.cardValue = cardNumber;
+
+                        //const li = document.createElement("li");
+                        // li.appendChild(img);
+                        // playerlist.appendChild(li);
+                        card.src = `${baseUrl}${cardColor}${cardNumber}.png`;
+                        i++;
+                        // const cardData = response.Cards[index];
+                    }
+
+                    //for (let j = 0; j < card.length; j++) {
+                    /* const cardColor = card.Color;
+                  const cardNumber = card.Value;
+                  const card = cardColor + cardNumber;
+                  const cardUrl = `${baseUrl}${card}.png`;*/
+                    //}
+                    //card.classList.remove("hidden");
+                    //card.addEventListener("click", function(){
+                    //tryToPlayCard(cardData.Value, cardData.Color);
+                    // })
+                });
+            }
+        }
+        // await updatePlayerCards();
+        //  i++;
+    }
+}
+
+async function showIfActivePlayer() {
+    console.log(
+        "Methode aufgerufen, mit currentPlayer :",
+        currentPlayer,
+        " und mit dem Index: ",
+        playerNames.indexOf(currentPlayer)
+    );
+
+    let activePlayer = getCurrentPlayerID();
+
+    for (let i = 0; i <= 3; i++) {
+        if (i === activePlayer) {
+            await showPlayersCards(i);
+        } else {
+            await hidePlayersCards(i);
+        }
+    }
+}
+
+async function winnerAlert() {
+    for (let i = 0; i <= 3; i++) {
+        // const playerHandElement = document.getElementById(`player_ul${i}`);
+        // console.log(playerHandElement.childNodes.length);
+        // const playerName = document.getElementById(`playerName${i}`).value;
+        //}
+
+        if (playerPoints[i] === 0) {
+            const modal = document.getElementById("customModal");
+            const winnerImage = document.getElementById("winnerImage");
+            const winnerText = document.getElementById("winnerText");
+
+            // Set winner image source and text
+            winnerImage.src = "Download.jpg"; // Replace with the actual URL of the winner's image
+            winnerText.innerText = "The winner is " + playerNames[i];
+            winnerSound.play();
+
+            // Display the custom modal
+            modal.style.display = "block";
+
+            // Close the modal when the user clicks the close button
+            const closeBtn = document.getElementsByClassName("close")[0];
+            closeBtn.onclick = function () {
+                winnerSound.pause();
+                winnerSound.currentTime = 0;
+
+                modal.style.display = "none";
+            };
+            //alert("The winner is " + playerNames[i]);
+
+            return;
+            //break;
+        }
+    }
+}
+
+async function shoutUNO() {
+    for (let i = 0; i <= 3; i++) {
+        const ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
+        const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
+
+        if (lis.length === 1) {
+            if (unoButton) {
+                const unoButton = document.getElementById(`uno-button`);
+                if (!unoButton.clicked) {
+                    alert(`Player ${playerNames[i]} did not say UNO, bitch!`);
+                    await addCard(i, `player_ul${i}`);
+                    await addCard(i, `player_ul${i}`);
+                }
+            } else {
+                console.log(`UNO button for player ${playerNames[i]} not found.`);
+            }
+        }
+
+        // Show UNO button for the player with one card left
+        // const unoButton = document.getElementById(`unoButtonPlayer${i + 1}`);
+        //unoButton.style.display = "block";
+
+        // Handle UNO button click event
+        //unoButton.addEventListener("click", async () => {
+        // Play UNO sound (assuming you have an audio element with id "unoSound")
+        //const unoSound = document.getElementById("unoSound");
+        // unoSound.play();
+        //});
+        // Draw two cards for the player (modify as needed)
+        // Hide UNO button after clicking
+        // unoButton.style.display = "none";
+    }
 }
 
 
