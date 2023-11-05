@@ -15,6 +15,7 @@ let colorSelectionModal = new bootstrap.Modal(document.getElementById('colorSele
 
 let ul;
 let lis;
+let playerSaidUno = false;
 
 const baseUrl = "uno_karten_originaldesign/";
 
@@ -36,22 +37,7 @@ newGameButton.addEventListener("click", async function () {
 let unoButton = document.getElementById("uno-button");
 
 unoButton.addEventListener("click", async function () {
-    //handleUnoClick(index);
-    for (let i = 0; i <= 3; i++) {
-        ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
-        lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
-        console.log(lis);
-        console.log(ul);
-
-        if (lis.length > 1) {
-            alert("You have more than one card, you can´t say uno");
-            await addCard(i, `player_ul${i}`);
-            await addCard(i, `player_ul${i}`);
-        } else if (lis.length === 1) {
-            await shoutUNO();
-            unoSound.play();
-        }
-    }
+    await unoButtonFunction();
 });
 
 //-------------- Modal Dialog for Game Rules --------------------//
@@ -173,8 +159,8 @@ async function distributeCards(playerId, htmlid) {
 
     while (i < result.Players[playerId].Cards.length) {
         let img = document.createElement("img");
-       
-        
+
+
 
 
         let cardColor = result.Players[playerId].Cards[i].Color;
@@ -677,6 +663,7 @@ async function winnerAlert() {
 }
 
 async function shoutUNO() {
+pla
     for (let i = 0; i <= 3; i++) {
         ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
         lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
@@ -707,6 +694,25 @@ async function shoutUNO() {
         // Draw two cards for the player (modify as needed)
         // Hide UNO button after clicking
         // unoButton.style.display = "none";
+    }
+}
+
+async function unoButtonFunction() {
+    const currentPlayerIndex = getCurrentPlayerID();
+    ul = document.getElementById(`player_ul${currentPlayerIndex+1}`);
+    if (ul) {
+        lis = ul.getElementsByTagName("li");
+        console.log(ul);
+        console.log(lis);
+
+        if (lis.length > 1) {
+            alert("You have more than one card, you can't say UNO");
+            // Add code to handle adding cards or any other action
+        } else if (lis.length === 1) {
+            unoSound.play();
+            playerSaidUno = true;
+            //await shoutUNO();
+        }
     }
 }
 
