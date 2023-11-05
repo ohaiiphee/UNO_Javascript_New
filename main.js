@@ -8,6 +8,8 @@ const unoSound = new Audio(
   "WhatsApp Audio 2023-11-04 um 14.39.10_30ef3f1e.mp3"
 );
 
+const winnerSound = new Audio("03 Stronger.m4a");
+
 let selectedColor;
 let colorSelectionPromiseResolver;
 let chosenCardValue;
@@ -36,21 +38,20 @@ newGameButton.addEventListener("click", async function () {
   await startNewGame();
 });
 
-
-
 let unoButton = document.getElementById("uno-button");
 unoButton.addEventListener("click", async function () {
   //handleUnoClick(index);
   for (let i = 0; i <= 3; i++) {
-
     const ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
-    const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
-    
+    //const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
+    //console.log(lis);
+    console.log(ul);
+
     if (lis.length > 1) {
       alert("You have more than one card, you can´t say uno");
       await addCard(i, `player_ul${i}`);
       await addCard(i, `player_ul${i}`);
-    } else if(lis.length === 1) {
+    } else if (lis.length === 1) {
       await shoutUNO();
       unoSound.play();
     }
@@ -295,7 +296,7 @@ async function tryToPlayCard(value, color) {
 
     removeCardFromHand(currentPlayer, value, color);
     await updatePlayerCards();
-    await winnerAlert();
+    winnerAlert();
 
     currentPlayer = playCardResponse.Player;
 
@@ -305,7 +306,7 @@ async function tryToPlayCard(value, color) {
     await updatePlayerPoints();
 
     result.NextPlayer = playCardResponse.Player;
-    await winnerAlert();
+    winnerAlert();
   }
   await showIfActivePlayer();
 }
@@ -497,7 +498,8 @@ async function getCards(gameID, playerName) {
     }
 
     currentPlayer = getCardsResult.Player;
-    updatePlayerPoints();
+    await updatePlayerPoints();
+    console.log("getCards- "+playerName);
   } else {
     alert("HTTP-Error: " + response.status);
   }
@@ -523,10 +525,24 @@ async function updatePlayerPoints() {
 }
 
 //-------------- Helper Function to Update Player Cards --------------------//
-async function updatePlayerCards() {
+/*async function updatePlayerCards() {
   playerNames.forEach((name) => {
     getCards(gameID, name);
   });
+  console.log("updatePlayerCards");
+}
+
+
+*/
+
+async function updatePlayerCards() {
+  const updatePromises = playerNames.map(async (name) => {
+    await getCards(gameID, name);
+  });
+
+  await Promise.all(updatePromises);
+
+  console.log("updatePlayerCards");
 }
 
 //-------------- Show the Color Selection Modal --------------------//
@@ -696,7 +712,28 @@ async function winnerAlert() {
     //}
 
     if (playerPoints[i] === 0) {
-      alert("The winner is the player: " + playerNames[i]);
+      const modal = document.getElementById("customModal");
+      const winnerImage = document.getElementById("winnerImage");
+      const winnerText = document.getElementById("winnerText");
+
+      // Set winner image source and text
+      winnerImage.src = "Download.jpg"; // Replace with the actual URL of the winner's image
+      winnerText.innerText = "The winner is " + playerNames[i];
+      winnerSound.play();
+
+      // Display the custom modal
+      modal.style.display = "block";
+
+      // Close the modal when the user clicks the close button
+      const closeBtn = document.getElementsByClassName("close")[0];
+      closeBtn.onclick = function () {
+        winnerSound.pause();
+        winnerSound.currentTime = 0;
+
+        modal.style.display = "none";
+      };
+      //alert("The winner is " + playerNames[i]);
+
       return;
       //break;
     }
@@ -704,33 +741,35 @@ async function winnerAlert() {
 }
 
 async function shoutUNO() {
-
   for (let i = 0; i <= 3; i++) {
-
     const ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
     const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
-    
-    if (lis.length === 1) {
-      alert("You did not say UNO bitch!");
-      await addCard(i, `player_ul${i}`);
-      await addCard(i, `player_ul${i}`);
-    } else {
-      return;
-    }
-  }
-  
-      // Show UNO button for the player with one card left
-      // const unoButton = document.getElementById(`unoButtonPlayer${i + 1}`);
-      //unoButton.style.display = "block";
 
-      // Handle UNO button click event
-      //unoButton.addEventListener("click", async () => {
-      // Play UNO sound (assuming you have an audio element with id "unoSound")
-      //const unoSound = document.getElementById("unoSound");
-      // unoSound.play();
-      //});
-      // Draw two cards for the player (modify as needed)
-      // Hide UNO button after clicking
-      // unoButton.style.display = "none";
+    if (lis.length === 1) {
+      if (unoButton) {
+        const unoButton = document.getElementById(`uno-button`);
+        if (!unoButton.clicked) {
+          alert(`Player ${playerNames[i]} did not say UNO, bitch!`);
+          await addCard(i, `player_ul${i}`);
+          await addCard(i, `player_ul${i}`);
+        }
+      } else {
+        console.log(`UNO button for player ${playerNames[i]} not found.`);
+      }
     }
-  
+
+    // Show UNO button for the player with one card left
+    // const unoButton = document.getElementById(`unoButtonPlayer${i + 1}`);
+    //unoButton.style.display = "block";
+
+    // Handle UNO button click event
+    //unoButton.addEventListener("click", async () => {
+    // Play UNO sound (assuming you have an audio element with id "unoSound")
+    //const unoSound = document.getElementById("unoSound");
+    // unoSound.play();
+    //});
+    // Draw two cards for the player (modify as needed)
+    // Hide UNO button after clicking
+    // unoButton.style.display = "none";
+  }
+}
