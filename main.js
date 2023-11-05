@@ -13,6 +13,9 @@ let chosenCardValue;
 let chosenCardColor;
 let colorSelectionModal = new bootstrap.Modal(document.getElementById('colorSelectionModal'));
 
+let ul;
+let lis;
+
 const baseUrl = "uno_karten_originaldesign/";
 
 let gameID = Object();
@@ -35,9 +38,9 @@ let unoButton = document.getElementById("uno-button");
 unoButton.addEventListener("click", async function () {
     //handleUnoClick(index);
     for (let i = 0; i <= 3; i++) {
-        const ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
-        //const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
-        //console.log(lis);
+        ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
+        lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
+        console.log(lis);
         console.log(ul);
 
         if (lis.length > 1) {
@@ -302,11 +305,10 @@ async function removeCardFromHand(currentPlayer, value, color) {
 
         for (let i = 0; i < cardImages.length; i++) {
             if (cardImages[i].cardValue === value && cardImages[i].cardColor === color) {
-                cardImages[i].parentNode.remove();
+                cardImages[i].parentElement.removeChild(cardImages[i]);
                 return; // Exit the loop once the card is found and removed
             }
         }
-        //console.log(`Card with value ${value} and color ${color} not found in ${currentPlayer}'s hand.`);
     } else {
         console.log(`Player hand for ${currentPlayer} not found.`);
     }
@@ -483,6 +485,7 @@ async function getCards(gameID, playerName) {
 
         currentPlayer = getCardsResult.Player;
         updatePlayerPoints();
+        //console.log("getCards - " + playerName);
 
     } else {
         alert("HTTP-Error: " + response.status);
@@ -512,9 +515,10 @@ async function updatePlayerPoints() {
 
 //-------------- Helper Function to Update Player Cards --------------------//
 async function updatePlayerCards() {
-    playerNames.forEach(async (name) => {
-        await getCards(gameID, name);
-    });
+    for (let i = 0; i < playerNames.length; i++) {
+        await getCards(gameID, playerNames[i]);
+    }
+    console.log("updatePlayerCards");
 }
 
 
@@ -541,7 +545,7 @@ async function colorModal() {
 //-------------- New Methods from Aurelie --------------------//
 function getCurrentPlayerID() {
     for (let i = 0; i <= 3; i++) {
-        if (result.NextPlayer === playerNames[i]) {
+        if (currentPlayer === playerNames[i]) {
             return i;
         }
     }
@@ -672,8 +676,8 @@ async function winnerAlert() {
 
 async function shoutUNO() {
     for (let i = 0; i <= 3; i++) {
-        const ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
-        const lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
+        ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
+        lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
 
         if (lis.length === 1) {
             if (unoButton) {
