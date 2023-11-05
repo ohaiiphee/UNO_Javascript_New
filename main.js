@@ -634,72 +634,51 @@ async function winnerAlert() {
         //}
 
         if (playerPoints[i] === 0) {
-            const modal = document.getElementById("customModal");
-            const winnerImage = document.getElementById("winnerImage");
-            const winnerText = document.getElementById("winnerText");
+            if (playerSaidUno === true) {
+                const modal = document.getElementById("customModal");
+                const winnerImage = document.getElementById("winnerImage");
+                const winnerText = document.getElementById("winnerText");
 
-            // Set winner image source and text
-            winnerImage.src = "Download.jpg"; // Replace with the actual URL of the winner's image
-            winnerText.innerText = "The winner is " + playerNames[i];
-            winnerSound.play();
+                // Set winner image source and text
+                winnerImage.src = "Download.jpg"; // Replace with the actual URL of the winner's image
+                winnerText.innerText = "The winner is " + playerNames[i];
+                winnerSound.play();
 
-            // Display the custom modal
-            modal.style.display = "block";
+                // Display the custom modal
+                modal.style.display = "block";
 
-            // Close the modal when the user clicks the close button
-            const closeBtn = document.getElementsByClassName("close")[0];
-            closeBtn.onclick = function () {
-                winnerSound.pause();
-                winnerSound.currentTime = 0;
-
-                modal.style.display = "none";
-            };
+                // Close the modal when the user clicks the close button
+                const closeBtn = document.getElementsByClassName("close")[0];
+                closeBtn.onclick = function () {
+                    winnerSound.pause();
+                    winnerSound.currentTime = 0;
+                    modal.style.display = "none";
+                };
+            } else {
+                alert(`Player ${playerNames[i]} did not say UNO, you get 2 Cards!`);
+                await addCard(i, `player_ul${i}`);
+                await addCard(i, `player_ul${i}`);
+            }
             //alert("The winner is " + playerNames[i]);
-
             return;
             //break;
         }
     }
 }
 
-async function shoutUNO() {
-pla
-    for (let i = 0; i <= 3; i++) {
-        ul = document.getElementById(`player_ul${i}`); // Get the UL element by its ID
-        lis = ul.getElementsByTagName("li"); // Get all the LI elements within the UL
-
-        if (lis.length === 1) {
-            if (unoButton) {
-                const unoButton = document.getElementById(`uno-button`);
-                if (!unoButton.clicked) {
-                    alert(`Player ${playerNames[i]} did not say UNO, bitch!`);
-                    await addCard(i, `player_ul${i}`);
-                    await addCard(i, `player_ul${i}`);
-                }
-            } else {
-                console.log(`UNO button for player ${playerNames[i]} not found.`);
-            }
-        }
-
-        // Show UNO button for the player with one card left
-        // const unoButton = document.getElementById(`unoButtonPlayer${i + 1}`);
-        //unoButton.style.display = "block";
-
-        // Handle UNO button click event
-        //unoButton.addEventListener("click", async () => {
-        // Play UNO sound (assuming you have an audio element with id "unoSound")
-        //const unoSound = document.getElementById("unoSound");
-        // unoSound.play();
-        //});
-        // Draw two cards for the player (modify as needed)
-        // Hide UNO button after clicking
-        // unoButton.style.display = "none";
+async function checkIfWinner() {
+    if (playerSaidUno === true) {
+        winnerAlert();
+    } else {
+        alert(`Player ${playerNames[i]} did not say UNO, you get 2 Cards!`);
+        await addCard(i, `player_ul${i}`);
+        await addCard(i, `player_ul${i}`);
     }
 }
 
 async function unoButtonFunction() {
     const currentPlayerIndex = getCurrentPlayerID();
-    ul = document.getElementById(`player_ul${currentPlayerIndex+1}`);
+    ul = document.getElementById(`player_ul${currentPlayerIndex + 1}`);
     if (ul) {
         lis = ul.getElementsByTagName("li");
         console.log(ul);
