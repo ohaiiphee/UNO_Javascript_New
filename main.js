@@ -173,7 +173,10 @@ async function distributeCards(playerId, htmlid) {
 
     while (i < result.Players[playerId].Cards.length) {
         let img = document.createElement("img");
-        img.className = "card";
+       
+        
+
+
         let cardColor = result.Players[playerId].Cards[i].Color;
         let cardNumber = result.Players[playerId].Cards[i].Value;
         let card = cardColor + cardNumber;
@@ -242,6 +245,7 @@ async function topCard(gameID) {
 async function clickCard(ev) {
     chosenCardValue = ev.target.cardValue;
     chosenCardColor = ev.target.cardColor;
+
     if (ev.target.cardValue === 13 || ev.target.cardValue === 14) {
         colorModal();
     } else {
@@ -557,16 +561,13 @@ async function hidePlayersCards(playerId) {
         const cardImages = playerHandElement.querySelectorAll("li img");
         cardImages.forEach((card) => {
             card.src = "uno_karten_originaldesign/back0.png";
-            //card.remove(); // Set the back card image source
-            //card.classList.remove("hidden");
+            card.style.pointerEvents = "none";
         });
     }
 }
 
 async function showPlayersCards(playerId) {
-    //let i = 0;
     const response = await getCards(gameID, currentPlayer);
-    //console.log("the get-Response", response);
     for (let i = 1; i <= 4; i++) {
         const playerHandElement = document.getElementById(
             `player_ul${playerId + 1}`
@@ -586,6 +587,7 @@ async function showPlayersCards(playerId) {
                         let cardColor = result.Players[playerId].Cards[i].Color;
                         let cardNumber = result.Players[playerId].Cards[i].Value;
                         let card = cardColor + cardNumber;
+
                         //let cardUrl = `${baseUrl}${card}.png`;
                         //img.src = cardUrl;
 

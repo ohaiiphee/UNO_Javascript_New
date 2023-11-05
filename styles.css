@@ -150,6 +150,7 @@ li {
 
   .hidden{
     display: none;
+    transform: translateY(0);
   }
   
   .uno-button{
